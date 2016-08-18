@@ -333,7 +333,7 @@
 
 (defcstruct (pars :class pars))
 
-(defcfun (init "mpg123_init") error)
+(defcfun (init "mpg123_init") errors)
 
 (defcfun (exit "mpg123_exit") :void)
 
@@ -344,13 +344,13 @@
 (defcfun (delete "mpg123_delete") :void
   (handle :pointer))
 
-(defcfun (param "mpg123_param") error
+(defcfun (param "mpg123_param") errors
   (handle :pointer)
   (type parms)
   (value :long)
   (fvalue :double))
 
-(defcfun (getparam "mpg123_getparam") error
+(defcfun (getparam "mpg123_getparam") errors
   (handle :pointer)
   (type parms)
   (value (:pointer :long))
@@ -360,7 +360,7 @@
   (key feature-set))
 
 (defcfun (plain-strerror "mpg123_plain_strerror") :string
-  (errcode :int))
+  (errcode errors))
 
 (defcfun (strerror "mpg123_sterror") :string
   (handle :pointer))
@@ -372,7 +372,7 @@
 
 (defcfun (supported-decoders "mpg123_supported_decoders") (:pointer :string))
 
-(defcfun (decoder "mpg123_decoder") error
+(defcfun (decoder "mpg123_decoder") errors
   (handle :pointer)
   (name :string))
 
@@ -390,59 +390,59 @@
 (defcfun (encsize "mpg123_encsize") :int
   (encoding :int))
 
-(defcfun (format-none "mpg123_format_none") error
+(defcfun (format-none "mpg123_format_none") errors
   (handle :pointer))
 
-(defcfun (format-all "mpg123_format_all") error
+(defcfun (format-all "mpg123_format_all") errors
   (handle :pointer))
 
-(defcfun (format "mpg123_format") error
+(defcfun (format "mpg123_format") errors
   (handle :pointer)
   (rate :long)
-  (channels :int)
-  (encodings :int))
+  (channels channelcount)
+  (encodings enc))
 
 (defcfun (format-support "mpg123_format_support") channelcount
   (handle :pointer)
   (rate :long)
-  (encoding :int))
+  (encoding enc))
 
-(defcfun (getformat "mpg123_getformat") error
+(defcfun (getformat "mpg123_getformat") errors
   (handle :pointer)
   (rate (:pointer :long))
-  (channels (:pointer :int))
-  (encoding (:pointer :int)))
+  (channels (:pointer channelcount))
+  (encoding (:pointer enc)))
 
-(defcfun (open "mpg123_open") error
+(defcfun (open "mpg123_open") errors
   (handle :pointer)
   (path :string))
 
-(defcfun (open-fd "mpg123_open_fd") error
+(defcfun (open-fd "mpg123_open_fd") errors
   (handle :pointer)
   (fd :int))
 
-(defcfun (open-handle "mpg123_open_handle") error
+(defcfun (open-handle "mpg123_open_handle") errors
   (handle :pointer)
   (iohandle :pointer))
 
-(defcfun (open-feed "mpg123_open_feed") error
+(defcfun (open-feed "mpg123_open_feed") errors
   (handle :pointer))
 
-(defcfun (close "mpg123_close") error
+(defcfun (close "mpg123_close") errors
   (handle :pointer))
 
-(defcfun (read "mpg123_read") error
+(defcfun (read "mpg123_read") errors
   (handle :pointer)
   (outmemory (:pointer :unsigned-char))
   (outmemsize size_t)
   (done (:pointer size_t)))
 
-(defcfun (feed "mpg123_feed") error
+(defcfun (feed "mpg123_feed") errors
   (handle :pointer)
   (in (:pointer :unsigned-char))
   (size size_t))
 
-(defcfun (decode "mpg123_decode") error
+(defcfun (decode "mpg123_decode") errors
   (handle :pointer)
   (inmemory (:pointer :unsigned-char))
   (inmemsize size_t)
@@ -450,22 +450,22 @@
   (outmemsize size_t)
   (done size_t))
 
-(defcfun (decode-frame "mpg123_decode_frame") error
+(defcfun (decode-frame "mpg123_decode_frame") errors
   (handle :pointer)
   (num (:pointer off_t))
   (audio (:pointer (:pointer :unsigned-char)))
   (bytes (:pointer size_t)))
 
-(defcfun (framebyframe-decode "mpg123_framebyframe_decode") error
+(defcfun (framebyframe-decode "mpg123_framebyframe_decode") errors
   (handle :pointer)
   (num (:pointer off_t))
   (audio (:pointer (:pointer :unsigned-char)))
   (bytes (:pointer size_t)))
 
-(defcfun (framebyframe-next "mpg123_framebyframe_next") error
+(defcfun (framebyframe-next "mpg123_framebyframe_next") errors
   (handle :pointer))
 
-(defcfun (framedata "mpg123_framedata") error
+(defcfun (framedata "mpg123_framedata") errors
   (handle :pointer)
   (header (:pointer :unsigned-long))
   (bodydata (:pointer (:pointer :unsigned-char)))
@@ -503,20 +503,20 @@
   (handle :pointer)
   (sec :double))
 
-(defcfun (index "mpg123_index") error
+(defcfun (index "mpg123_index") errors
   (handle :pointer)
   (offsets (:pointer (:pointer off_t)))
   (step (:pointer off_t))
   (fill (:pointer size_t)))
 
-(defcfun (set-index "mpg123_set_index") error
+(defcfun (set-index "mpg123_set_index") errors
   (handle :pointer)
   (offsets (:pointer off_t))
   (step off_t)
   (fill size_t))
 
 ;; DON'T USE!
-(defcfun (position "mpg123_position") error
+(defcfun (position "mpg123_position") errors
   (handle :pointer)
   (frame-offset off_t)
   (buffered-bytes off_t)
@@ -525,7 +525,7 @@
   (current-seconds (:pointer :double))
   (seconds-left (:pointer :double)))
 
-(defcfun (eq "mpg123_eq") error
+(defcfun (eq "mpg123_eq") errors
   (handle :pointer)
   (channel channels)
   (band :int)
@@ -536,30 +536,30 @@
   (channel channels)
   (band :int))
 
-(defcfun (reset-eq "mpg123_reset_eq") error
+(defcfun (reset-eq "mpg123_reset_eq") errors
   (handle :pointer))
 
-(defcfun (volume "mpg123_volume") error
+(defcfun (volume "mpg123_volume") errors
   (handle :pointer)
   (vol :double))
 
-(defcfun (volume-change "mpg123_volume_change") error
+(defcfun (volume-change "mpg123_volume_change") errors
   (handle :pointer)
   (change :double))
 
-(defcfun (getvolume "mpg123_getvolume") error
+(defcfun (getvolume "mpg123_getvolume") errors
   (handle :pointer)
   (base (:pointer :double))
   (really (:pointer :double))
   (rva-dv (:pointer :double)))
 
-(defcfun (info "mpg123_info") error
+(defcfun (info "mpg123_info") errors
   (handle :pointer)
   (frameinfo :pointer))
 
 (defcfun (safe-buffer "mpg123_safe_buffer") size_t)
 
-(defcfun (scan "mpg123_scan") error
+(defcfun (scan "mpg123_scan") errors
   (handle :pointer))
 
 (defcfun (framelength "mpg123_framelength") off_t
@@ -568,7 +568,7 @@
 (defcfun (length "mpg123_length") off_t
   (handle :pointer))
 
-(defcfun (set-filesize "mpg123_set_filesize") error
+(defcfun (set-filesize "mpg123_set_filesize") errors
   (handle :pointer)
   (size off_t))
 
@@ -581,7 +581,7 @@
 (defcfun (clip "mpg123_clip") :long
   (handle :pointer))
 
-(defcfun (getstate "mpg123_getstate") error
+(defcfun (getstate "mpg123_getstate") errors
   (handle :pointer)
   (key state)
   (val (:pointer :long))
@@ -647,12 +647,12 @@
 (defcfun (meta-free "mpg123_meta_free") :void
   (handle :pointer))
 
-(defcfun (id3 "mpg123_id3") error
+(defcfun (id3 "mpg123_id3") errors
   (handle :pointer)
   (v1 :pointer)
   (v2 :pointer))
 
-(defcfun (icy "mpg123_icy") error
+(defcfun (icy "mpg123_icy") errors
   (handle :pointer)
   (icy-meta (:pointer (:pointer :char))))
 
@@ -670,13 +670,13 @@
 (defcfun (delete-pars "mpg123_delete_pars") :void
   (pars :pointer))
 
-(defcfun (fmt-none "mpg123_fmt_none") error
+(defcfun (fmt-none "mpg123_fmt_none") errors
   (pars :pointer))
 
-(defcfun (fmt-all "mpg123_fmt_all") error
+(defcfun (fmt-all "mpg123_fmt_all") errors
   (pars :pointer))
 
-(defcfun (fmt "mpg123_fmt") error
+(defcfun (fmt "mpg123_fmt") errors
   (pars :pointer)
   (rate :long)
   (channels :int)
@@ -687,19 +687,19 @@
   (rate :long)
   (encoding :int))
 
-(defcfun (par "mgp123_par") error
+(defcfun (par "mgp123_par") errors
   (pars :pointer)
   (type parms)
   (value :long)
   (fvalue :double))
 
-(defcfun (getpar "mpg123_getpar") error
+(defcfun (getpar "mpg123_getpar") errors
   (pars :pointer)
   (type parms)
   (value (:pointer :long))
   (fvalue (:pointer :double)))
 
-(defcfun (replace-buffer "mpg123_replace_buffer") error
+(defcfun (replace-buffer "mpg123_replace_buffer") errors
   (handle :pointer)
   (data (:pointer :unsigned-char))
   (size size_t))
@@ -707,12 +707,12 @@
 (defcfun (outblock "mpg123_outblock") size_t
   (handle :pointer))
 
-(defcfun (replace-reader "mpg123_replace_reader") error
+(defcfun (replace-reader "mpg123_replace_reader") errors
   (handle :pointer)
   (r_read :pointer)
   (r_lseek :pointer))
 
-(defcfun (replace-reader-handle "mpg123_replace_reader_handle") error
+(defcfun (replace-reader-handle "mpg123_replace_reader_handle") errors
   (handle :pointer)
   (r_read :pointer)
   (r_lseek :pointer)

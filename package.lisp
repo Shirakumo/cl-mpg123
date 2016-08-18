@@ -19,6 +19,8 @@
    #:fmt-rate
    #:fmt-channels
    #:fmt-encoding
+   #:size_t
+   #:off_t
    #:handle
    #:frameinfo
    #:frameinfo-version

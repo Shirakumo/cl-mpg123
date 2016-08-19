@@ -271,24 +271,28 @@
 
 (defun map-text-array (func array size)
   (dotimes (i size)
-    (let* ((p (cffi:mem-aref array '(:struct cl-mpg123-cffi:text) i)))
-      (break)
+    (let* ((p (cffi:mem-aptr array :pointer i)))
       (let ((lang (foreign-string-to-lisp (cl-mpg123-cffi:text-lang p) :count 3))
             (id   (foreign-string-to-lisp (cl-mpg123-cffi:text-id p) :count 4))
             (description (mstring (cl-mpg123-cffi:text-description p)))
             (text (mstring (cl-mpg123-cffi:text-description p))))
         (funcall func lang id description text)))))
 
+(defun direct-str (pointer length)
+  (let ((str (foreign-string-to-lisp pointer :max-chars length)))
+    (if (string= "" str) NIL str)))
+
 (defmethod initialize-instance :after ((data metadata) &key id3v2 id3v1)
   ;; Fill by id3v1, then override by id3v2.
   (with-slots (version title artist album year genre comments texts extras pictures) data
     (when id3v1
       (setf version "1.0")
-      (setf title (cl-mpg123-cffi:id3v1-title id3v1))
-      (setf artist (cl-mpg123-cffi:id3v1-artist id3v1))
-      (setf album (cl-mpg123-cffi:id3v1-album id3v1))
-      (setf year (cl-mpg123-cffi:id3v1-year id3v1))
-      (push (cl-mpg123-cffi:id3v1-comment id3v1) comments)
+      (setf title (direct-str (cl-mpg123-cffi:id3v1-title id3v1) 30))
+      (setf artist (direct-str (cl-mpg123-cffi:id3v1-artist id3v1) 30))
+      (setf album (direct-str (cl-mpg123-cffi:id3v1-album id3v1) 30))
+      (setf year (direct-str (cl-mpg123-cffi:id3v1-year id3v1) 4))
+      (let ((comment (direct-str (cl-mpg123-cffi:id3v1-comment id3v1) 30)))
+        (when comment (push comment comments)))
       (push (or (nth (cl-mpg123-cffi:id3v1-genre id3v1) *id3v1-genre-list*) "Unknown")
             genre))
     (when id3v2

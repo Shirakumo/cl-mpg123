@@ -281,7 +281,7 @@
   (mode mode)
   (mode-ext :int)
   (framesize :int)
-  (flags flags)
+  (flags :int)
   (emphasis :int)
   (bitrate :int)
   (abr-rate :int)
@@ -381,11 +381,11 @@
 
 (defcfun (rates "mpg123_rates") :void
   (list (:pointer (:pointer :long)))
-  (number size_t))
+  (number (:pointer size_t)))
 
 (defcfun (encodings "mpg123_encodings") :void
   (list (:pointer (:pointer :int)))
-  (number size_t))
+  (number (:pointer size_t)))
 
 (defcfun (encsize "mpg123_encsize") :int
   (encoding :int))

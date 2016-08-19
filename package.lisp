@@ -146,12 +146,12 @@
    #:getvolume
    #:info
    #:safe-buffer
-   #:scane
+   #:scan
    #:framelength
    #:length
    #:set-filesize
    #:tpf
-   #:sfp
+   #:spf
    #:clip
    #:getstate
    #:init-string

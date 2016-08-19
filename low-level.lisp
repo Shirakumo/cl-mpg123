@@ -299,7 +299,7 @@
   (text (:struct mstring)))
 
 (defcstruct (picture :class picture :conc-name picture-)
-  (type :char)
+  (type id3-pic-type)
   (description (:struct mstring))
   (mime-type (:struct mstring))
   (size size_t)
@@ -313,11 +313,11 @@
   (year (:pointer (:struct mstring)))
   (genre (:pointer (:struct mstring)))
   (comment (:pointer (:struct mstring)))
-  (comment-list (:pointer (:struct mstring)))
+  (comment-list (:pointer (:struct text)))
   (comments size_t)
-  (text (:pointer (:struct mstring)))
+  (text (:pointer (:struct text)))
   (texts size_t)
-  (extra (:pointer (:struct mstring)))
+  (extra (:pointer (:struct text)))
   (extras size_t)
   (picture (:pointer (:struct picture)))
   (pictures size_t))
@@ -551,7 +551,7 @@
   (handle :pointer)
   (base (:pointer :double))
   (really (:pointer :double))
-  (rva-dv (:pointer :double)))
+  (rva-db (:pointer :double)))
 
 (defcfun (info "mpg123_info") errors
   (handle :pointer)

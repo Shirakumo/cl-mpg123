@@ -41,17 +41,3 @@
     `(let ((,res (progn ,@form)))
        (when (= ,res 0) (error "Failed to execute ~s." ',form))
        ,res)))
-
-(defun c-array-to-list (array type &optional length)
-  (if length
-      (loop for i from 0 below length
-            for el = (mem-aref array :pointer i)
-            collect (mem-ref el type))
-      (loop for i from 0
-            for el = (mem-aref array :pointer i)
-            until (null-pointer-p el)
-            collect (mem-ref el type))))
-
-(defun map-c-array (function pointer size &optional (type :pointer))
-  (dotimes (i size)
-    (funcall function (cffi:mem-aptr pointer type i))))

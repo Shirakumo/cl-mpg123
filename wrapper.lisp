@@ -32,6 +32,11 @@
             (dolist (chan channels channel)
               (setf channel (logior channel (foreign-enum-value 'cl-mpg123-cffi:channelcount chan))))))))
 
+(defun decode-flags (flags)
+  (loop for flag in (foreign-enum-keyword-list 'cl-mpg123-cffi:flags)
+        when (/= 0 (logand flags (foreign-enum-value 'cl-mpg123-cffi:flags flag)))
+        collect flag))
+
 (defun dispose-handle (handle)
   (cl-mpg123-cffi:close handle)
   (cl-mpg123-cffi:delete handle))
@@ -52,6 +57,7 @@
    :buffer-size T))
 
 (defmethod shared-initialize :after ((file file) slots &key decoder accepted-format buffer-size)
+  (init)
   (with-foreign-object (err :pointer)
     (let ((handle (cl-mpg123-cffi:new (or decoder (null-pointer)) err)))
       (when (null-pointer-p handle)
@@ -109,19 +115,25 @@
   decoder)
 
 (defun decoders ()
-  (c-array-to-list (cl-mpg123-cffi:decoders) :string))
+  (loop for ptr = (cl-mpg123-cffi:decoders) then (inc-pointer ptr (foreign-type-size :pointer))
+        for string = (mem-ref ptr :string)
+        while string collect string))
 
 (defun supported-decoders ()
-  (c-array-to-list (cl-mpg123-cffi:supported-decoders) :string))
+  (loop for ptr = (cl-mpg123-cffi:supported-decoders) then (inc-pointer ptr (foreign-type-size :pointer))
+        for string = (mem-ref ptr :string)
+        while string collect string))
 
 (defun supported-rates ()
   (with-value-args ((list :pointer) (number 'size_t))
       (cl-mpg123-cffi:rates list number)
-    (c-array-to-list list number)))
+    (when (and list number)
+      (loop for i from 0 below number
+            collect (mem-aref list :long i)))))
 
 (defun supported-encodings ()
   (with-value-args ((list :pointer) (number 'size_t))
-      (with-generic-error (cl-mpg123-cffi:encodings list number))
+      (cl-mpg123-cffi:encodings list number)
     (when (and list number)
       (loop for i from 0 below number
             for enc = (mem-aref list :int i)
@@ -165,7 +177,7 @@
         (:second (seek file (time-frame-index file position) :by :frame))))))
 
 (defun time-frame-index (file seconds)
-  (with-negative-error (cl-mpg123-cffi:timeframe (handle file) seconds)))
+  (with-negative-error (cl-mpg123-cffi:timeframe (handle file) (float seconds 0.0d0))))
 
 (defun equalizer (file channel band)
   (assert (<= 0 band 31) () "Equalizer band must be within [0,31].")
@@ -188,8 +200,18 @@
       (with-generic-error (cl-mpg123-cffi:volume (handle file) volume))))
 
 (defun info (file)
-  (with-foreign-values ((info '(:struct cl-mpg123-cffi:frameinfo)))
-    (with-generic-error (cl-mpg123-cffi:info (handle file) info))))
+  (with-foreign-object (info :pointer)
+    (with-generic-error (cl-mpg123-cffi:info (handle file) info))
+    (list :version (cl-mpg123-cffi:frameinfo-version info)
+          :layer (cl-mpg123-cffi:frameinfo-layer info)
+          :rate (cl-mpg123-cffi:frameinfo-rate info)
+          :mode (cl-mpg123-cffi:frameinfo-mode info)
+          :mode-ext (cl-mpg123-cffi:frameinfo-mode-ext info)
+          :flags (decode-flags (cl-mpg123-cffi:frameinfo-flags info))
+          :emphasis (cl-mpg123-cffi:frameinfo-emphasis info)
+          :bitrate (cl-mpg123-cffi:frameinfo-bitrate info)
+          :abr-rate (cl-mpg123-cffi:frameinfo-abr-rate info)
+          :vbr (cl-mpg123-cffi:frameinfo-vbr info))))
 
 (defun scan (file)
   (unless (scanned file)
@@ -199,19 +221,19 @@
 
 (defun frame-count (file)
   (scan file)
-  (with-generic-error (cl-mpg123-cffi:framelength (handle file))))
+  (with-negative-error (cl-mpg123-cffi:framelength (handle file))))
 
 (defun sample-count (file)
   (scan file)
-  (with-generic-error (cl-mpg123-cffi:length (handle file))))
+  (with-negative-error (cl-mpg123-cffi:length (handle file))))
 
 (defun frame-seconds (file)
   (scan file)
-  (with-generic-error (cl-mpg123-cffi:tpf (handle file))))
+  (with-negative-error (cl-mpg123-cffi:tpf (handle file))))
 
 (defun frame-samples (file)
   (scan file)
-  (with-generic-error (cl-mpg123-cffi:spf (handle file))))
+  (with-negative-error (cl-mpg123-cffi:spf (handle file))))
 
 (defun track-length (file)
   (* (frame-seconds file)
@@ -230,22 +252,32 @@
    (pictures :initform NIL :reader pictures)))
 
 (defun mstring (mstring)
-  (cffi:foreign-string-to-lisp
-   (cl-mpg123-cffi:mstring-p mstring)
-   :count (cl-mpg123-cffi:mstring-fill mstring)
-   :encoding :UTF-8))
+  (etypecase mstring
+    (foreign-pointer
+     (cffi:foreign-string-to-lisp
+      (cl-mpg123-cffi:mstring-p mstring)
+      :count (cl-mpg123-cffi:mstring-fill mstring)
+      :encoding :UTF-8))
+    (list
+     (cffi:foreign-string-to-lisp
+      (getf mstring 'cl-mpg123-cffi::p)
+      :count (getf mstring 'cl-mpg123-cffi::fill)
+      :encoding :UTF-8))))
 
 (defmacro do-text-array ((lang id description text) (array size) &body body)
-  (let ((p (gensym "TEXT-POINTER")))
-    `(map-c-array (lambda (,p)
-                    (let ((,lang (foreign-string-to-lisp (cl-mpg123-cffi:text-lang ,p) :count 3))
-                          (,id   (foreign-string-to-lisp (cl-mpg123-cffi:text-id ,p) :count 4))
-                          (,description (mstring (cl-mpg123-cffi:text-description ,p)))
-                          (,text (mstring (cl-mpg123-cffi:text-text ,p))))
-                      ,@body))
-                  ,array
-                  ,size
-                  'cl-mpg123-cffi:text)))
+  `(map-text-array (lambda (,lang ,id ,description ,text)
+                     ,@body)
+                   ,array ,size))
+
+(defun map-text-array (func array size)
+  (dotimes (i size)
+    (let* ((p (cffi:mem-aref array '(:struct cl-mpg123-cffi:text) i)))
+      (break)
+      (let ((lang (foreign-string-to-lisp (cl-mpg123-cffi:text-lang p) :count 3))
+            (id   (foreign-string-to-lisp (cl-mpg123-cffi:text-id p) :count 4))
+            (description (mstring (cl-mpg123-cffi:text-description p)))
+            (text (mstring (cl-mpg123-cffi:text-description p))))
+        (funcall func lang id description text)))))
 
 (defmethod initialize-instance :after ((data metadata) &key id3v2 id3v1)
   ;; Fill by id3v1, then override by id3v2.
@@ -264,6 +296,7 @@
       (do-text-array (lang id desc text)
           ((cl-mpg123-cffi:id3v2-text id3v2)
            (cl-mpg123-cffi:id3v2-texts id3v2))
+        (declare (ignore lang id))
         (cond ((string= desc "title") (setf title text))
               ((string= desc "artist") (setf artist text))
               ((string= desc "album") (setf album text))
@@ -273,16 +306,20 @@
       (do-text-array (lang id desc text)
           ((cl-mpg123-cffi:id3v2-comment-list id3v2)
            (cl-mpg123-cffi:id3v2-comments id3v2))
+        (declare (ignore lang id))
         (push (list desc text) texts))
       (do-text-array (lang id desc text)
           ((cl-mpg123-cffi:id3v2-extra id3v2)
            (cl-mpg123-cffi:id3v2-extras id3v2))
+        (declare (ignore lang id))
         (push (list desc text) extras))
-      (map-c-array (lambda (p) (push (make-instance 'picture :struct p) pictures))
-                   (cl-mpg123-cffi:id3v2-picture id3v2)
-                   (cl-mpg123-cffi:id3v2-pictures id3v2)))))
+      ;; (map-c-array (lambda (p) (push (make-instance 'picture :struct p) pictures))
+      ;;              (cl-mpg123-cffi:id3v2-picture id3v2)
+      ;;              (cl-mpg123-cffi:id3v2-pictures id3v2))
+      )))
 
 (defun metadata (file)
+  (scan file)
   (multiple-value-bind (id3v1 id3v2)
       (with-foreign-values ((id3v1 :pointer) (id3v2 :pointer))
         (with-generic-error (cl-mpg123-cffi:id3 (handle file) id3v1 id3v2)))

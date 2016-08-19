@@ -188,7 +188,8 @@
 
 (defpackage #:cl-mpg123
   (:nicknames #:org.shirakumo.fraf.mpg123)
-  (:use #:cl)
+  (:use #:cl #:cffi)
+  (:import-from #:org.shirakumo.fraf.mpg123.cffi #:size_t #:off_t)
   ;; wrapper.lisp
   (:export
    ))

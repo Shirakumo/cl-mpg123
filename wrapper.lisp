@@ -279,8 +279,9 @@
         (funcall func lang id description text)))))
 
 (defun direct-str (pointer length)
-  (let ((str (foreign-string-to-lisp pointer :max-chars length)))
-    (if (string= "" str) NIL str)))
+  (let ((str (or (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding :utf-8))
+                 (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding :iso-8859-1)))))
+    (if (or (not str) (string= "" str)) NIL str)))
 
 (defmethod initialize-instance :after ((data metadata) &key id3v2 id3v1)
   ;; Fill by id3v1, then override by id3v2.

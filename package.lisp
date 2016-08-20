@@ -301,6 +301,8 @@
    #:file-format
    #:read-directly
    #:process
+   #:process-to-vector
+   #:process-into-vector
    #:decode
    #:decode-frame
    #:sample-position

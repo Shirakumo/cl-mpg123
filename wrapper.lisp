@@ -226,6 +226,20 @@
   (values (read-directly file buffer buffer-size)
           buffer))
 
+(defun process-to-vector (file &key (buffer (buffer file))
+                                    (buffer-size (buffer-size file)))
+  (let* ((count (read-directly file buffer buffer-size))
+         (vector (make-array count :element-type '(unsigned-byte 8))))
+    (dotimes (i count vector)
+      (setf (aref vector i) (cffi:mem-aref buffer :unsigned-char i)))))
+
+(defun process-into-vector (file vector &key (buffer (buffer file))
+                                             (buffer-size (buffer-size file))
+                                             (offset 0))
+  (let ((count (read-directly file buffer buffer-size)))
+    (dotimes (i count count)
+      (setf (aref vector (+ i offset)) (cffi:mem-aref buffer :unsigned-char i)))))
+
 (defun decode (file in in-size out out-size)
   (with-foreign-object (done 'size_t)
     (with-error (err 'decode-failed :file file :error err :in-buffer in :in-size in-size :out-buffer out :out-size out-size)

@@ -226,6 +226,25 @@
    #:decoder
    #:accepted-format
    #:buffer-size
+   #:force-rate
+   #:down-sample
+   #:rva
+   #:downspeed
+   #:upspeed
+   #:start-frame
+   #:decode-frames
+   #:outscale
+   #:index-size
+   #:preframes
+   #:force-channels
+   #:force-8bit
+   #:gapless
+   #:fuzzy-seek
+   #:force-float
+   #:skip-id3v2
+   #:ignore-infoframe
+   #:auto-resample
+   #:pictures
    #:connect
    #:disconnect
    #:decoders

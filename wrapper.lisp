@@ -52,19 +52,60 @@
    (path :initarg :path :reader path)
    (decoder :initarg :decoder :reader decoder)
    (accepted-format :initarg :accepted-format :reader accepted-format)
-   (buffer-size :initarg :buffer-size :reader buffer-size))
+   (buffer-size :initarg :buffer-size :reader buffer-size)
+   (force-rate :initarg :force-rate :reader force-rate)
+   (down-sample :initarg :down-sample :reader down-sample)
+   (rva :initarg :rva :reader rva)
+   (downspeed :initarg :downspeed :reader downspeed)
+   (upspeed :initarg :upspeed :reader upspeed)
+   (start-frame :initarg :start-frame :reader start-frame)
+   (decode-frames :initarg :decode-frames :reader decode-frames)
+   (outscale :initarg :outscale :reader outscale)
+   (index-size :initarg :index-size :reader index-size)
+   (preframes :initarg :preframes :reader preframes)
+   (force-channels :initarg :force-channels :reader force-channels)
+   (force-8bit :initarg :force-8bit :reader force-8bit)
+   (gapless :initarg :gapless :reader gapless)
+   (fuzzy-seek :initarg :fuzzy-seek :reader fuzzy-seek)
+   (force-float :initarg :force-float :reader force-float)
+   (skip-id3v2 :initarg :skip-id3v2 :reader skip-id3v2)
+   (ignore-infoframe :initarg :ignore-infoframe :reader ignore-infoframe)
+   (auto-resample :initarg :auto-resample :reader auto-resample)
+   (pictures :initarg :pictures :reader pictures))
   (:default-initargs
    :path NIL
    :decoder NIL
    :accepted-format T
-   :buffer-size T))
+   :buffer-size T
+   :force-rate NIL
+   :down-sample NIL
+   :rva :off
+   :downspeed 1
+   :upspeed 1
+   :start-frame 0
+   :decode-frames T
+   :outscale 1
+   :index-size NIL
+   :preframes 4
+   :force-channels NIL
+   :force-8bit NIL
+   :gapless T
+   :fuzzy-seek NIL
+   :force-float NIL
+   :skip-id3v2 NIL
+   :ignore-infoframe NIL
+   :auto-resample T
+   :pictures T))
 
 (defmethod print-object ((file file) stream)
   (print-unreadable-object (file stream :type T)
     (format stream "~@[~s~]~:[~; :CONNECTED~]"
             (path file) (connected file))))
 
-(defmethod shared-initialize :after ((file file) slots &key decoder accepted-format buffer-size)
+(defmethod shared-initialize :after ((file file) slots &key decoder accepted-format buffer-size force-rate down-sample rva
+                                                            downspeed upspeed start-frame decode-frames outscale index-size
+                                                            preframes force-channels force-8bit gapless fuzzy-seek
+                                                            force-float skip-id3v2 ignore-infoframe auto-resample pictures)
   (init)
   (with-foreign-object (err :pointer)
     (let ((handle (cl-mpg123-cffi:new (or decoder (null-pointer)) err)))
@@ -84,8 +125,45 @@
       (when buffer-size
         (let ((buffer (foreign-alloc :char :count (buffer-size file))))
           (setf (slot-value file 'buffer) buffer)
-          (tg:finalize file (lambda () (foreign-free buffer)))))))
-  file)
+          (tg:finalize file (lambda () (foreign-free buffer)))))
+      ;; Configure all parameters and flags.
+      (when force-rate
+        (cl-mpg123-cffi:param handle :force-rate force-rate 0.0d0))
+      (ecase down-sample
+        ((NIL :native 0)   (cl-mpg123-cffi:param handle :down-sample 0 0.0d0))
+        ((:half-rate 1)    (cl-mpg123-cffi:param handle :down-sample 1 0.0d0))
+        ((:quarter-rate 2) (cl-mpg123-cffi:param handle :down-sample 2 0.0d0)))
+      (ecase rva
+        ((NIL :off :disable)  (cl-mpg123-cffi:param handle :rva 0 0.0d0))
+        ((:mix :track :radio) (cl-mpg123-cffi:param handle :rva 1 0.0d0))
+        ((:album :audiophile) (cl-mpg123-cffi:param handle :rva 2 0.0d0)))
+      (cl-mpg123-cffi:param handle :downspeed downspeed 0.0d0)
+      (cl-mpg123-cffi:param handle :upspeed upspeed 0.0d0)
+      (cl-mpg123-cffi:param handle :start-frame start-frame 0.0d0)
+      (etypecase decode-frames
+        ((eql T) (cl-mpg123-cffi:param handle :decode-frames 0 0.0d0))
+        (integer (cl-mpg123-cffi:param handle :decode-frames decode-frames 0.0d0)))
+      (cl-mpg123-cffi:param handle :outscale (round outscale) (float outscale 0.0d0))
+      (etypecase index-size
+        ((eql NIL))
+        ((eql T) (cl-mpg123-cffi:param handle :index-size -1 0.0d0))
+        (integer (cl-mpg123-cffi:param handle :index-size index-size 0.0d0)))
+      (cl-mpg123-cffi:param handle :preframes preframes 0.0d0)
+      (let ((flags 0))
+        (flet ((add-flag (name)
+                 (setf flags (logior flags (foreign-enum-value 'cl-mpg123-cffi:param-flags name)))))
+          (ecase force-channels
+            ((NIL))
+            ((:mono-right :mono-left :mono-mix) (add-flag force-channels))
+            (:stereo (add-flag :force-stereo)))
+          (when force-8bit (add-flag :force-8bit))
+          (when gapless (add-flag :gapless))
+          (when fuzzy-seek (add-flag :fuzzy))
+          (when force-float (add-flag :force-float))
+          (when skip-id3v2 (add-flag :skip-id3v2))
+          (when ignore-infoframe (add-flag :ignore-infoframe))
+          (when auto-resample (add-flag :auto-resample))
+          (when pictures (add-flag :pictures)))))))
 
 (defmethod reinitialize-instance :around ((file file) &key)
   (dispose-handle (handle file))

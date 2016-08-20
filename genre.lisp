@@ -201,3 +201,35 @@
         "Dubstep"
         "Garage Rock"
         "Psybient"))
+
+(defun id3v1-genre (num)
+  (or (nth num *id3v1-genre-list*) "Unknown"))
+
+(defun id3v2-genre (genre)
+  (let ((pos 0)
+        (genres ()))
+    (tagbody
+     dispatch
+       (cond ((<= (length genre) pos)
+              (go end))
+             ((char= (char genre pos) #\()
+              (go start-bracket))
+             (T
+              (go read-rest)))
+     start-bracket
+       (incf pos)
+       (if (char= (char genre pos) #\()
+           (go read-rest)
+           (go read-num))
+     read-num
+       (let ((start pos))
+         (loop until (char= (char genre pos) #\)) do (incf pos))
+         (pushnew (id3v1-genre (parse-integer genre :start start :end pos)) genres :test #'string-equal)
+         (incf pos)
+         (go dispatch))
+     read-rest
+       (pushnew (subseq genre pos) genres :test #'string-equal)
+       (setf pos (length genre))
+       (go dispatch)
+     end
+       (return-from id3v2-genre genres))))

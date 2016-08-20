@@ -15,7 +15,7 @@
   :serial T
   :components ((:file "package")
                (:file "toolkit")
-               (:file "id3v1-genre-list")
+               (:file "genre")
                (:file "low-level")
                (:file "wrapper")
                (:file "documentation"))

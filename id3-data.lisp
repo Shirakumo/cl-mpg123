@@ -203,7 +203,7 @@
         "Psybient"))
 
 (defun id3v1-genre (num)
-  (or (nth num *id3v1-genre-list*) "Unknown"))
+  (nth num *id3v1-genre-list*))
 
 (defun id3v2-genre (genre)
   (let ((pos 0)

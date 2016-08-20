@@ -139,13 +139,13 @@
         (when force-rate
           (cl-mpg123-cffi:param handle :force-rate force-rate 0.0d0))
         (ecase down-sample
-          ((NIL :native 0)   (cl-mpg123-cffi:param handle :down-sample 0 0.0d0))
-          ((:half-rate 1)    (cl-mpg123-cffi:param handle :down-sample 1 0.0d0))
-          ((:quarter-rate 2) (cl-mpg123-cffi:param handle :down-sample 2 0.0d0)))
+          ((NIL :native) (cl-mpg123-cffi:param handle :down-sample 0 0.0d0))
+          (:half-rate    (cl-mpg123-cffi:param handle :down-sample 1 0.0d0))
+          (:quarter-rate (cl-mpg123-cffi:param handle :down-sample 2 0.0d0)))
         (ecase rva
-          ((NIL :off :disable)  (cl-mpg123-cffi:param handle :rva 0 0.0d0))
-          ((:mix :track :radio) (cl-mpg123-cffi:param handle :rva 1 0.0d0))
-          ((:album :audiophile) (cl-mpg123-cffi:param handle :rva 2 0.0d0)))
+          ((NIL :off)  (cl-mpg123-cffi:param handle :rva 0 0.0d0))
+          ((:mix) (cl-mpg123-cffi:param handle :rva 1 0.0d0))
+          ((:album) (cl-mpg123-cffi:param handle :rva 2 0.0d0)))
         (cl-mpg123-cffi:param handle :downspeed downspeed 0.0d0)
         (cl-mpg123-cffi:param handle :upspeed upspeed 0.0d0)
         (cl-mpg123-cffi:param handle :start-frame start-frame 0.0d0)

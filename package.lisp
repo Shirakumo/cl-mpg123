@@ -190,6 +190,52 @@
   (:nicknames #:org.shirakumo.fraf.mpg123)
   (:use #:cl #:cffi)
   (:import-from #:org.shirakumo.fraf.mpg123.cffi #:size_t #:off_t)
+  ;; conditions.lisp
+  (:export
+   #:mpg-error
+   #:unknown-id3v2-frame-type
+   #:error-string-error
+   #:error-string
+   #:generic-error
+   #:init-failed
+   #:mpg-file-error
+   #:file
+   #:mpg-file-string-error
+   #:handler-creation-failed
+   #:not-connected
+   #:connection-failed
+   #:path
+   #:disconnection-failed
+   #:decoder-set-failed
+   #:value
+   #:read-failed
+   #:buffer
+   #:buffer-size
+   #:decode-failed
+   #:in-buffer
+   #:out-buffer
+   #:in-size
+   #:out-size
+   #:frame-decode-failed
+   #:query-failed
+   #:query
+   #:seek-failed
+   #:by
+   #:mode
+   #:seek-position
+   #:euqalizer-query-failed
+   #:band
+   #:channel
+   #:equalizer-set-failed
+   #:band
+   #:channel
+   #:equalizer-reset-failed
+   #:volume-query-failed
+   #:volume-set-failed
+   #:relative
+   #:value
+   #:scan-failed
+   #:id3-query-failed)
   ;; id3-data
   (:export
    #:id3v1-genre

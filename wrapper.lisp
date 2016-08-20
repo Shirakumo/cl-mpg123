@@ -11,7 +11,8 @@
 
 (defun init ()
   (unless *init*
-    (with-generic-error (cl-mpg123-cffi:init))
+    (with-error (err 'init-failed :error err)
+      (cl-mpg123-cffi:init))
     (setf *init* T)))
 
 (defun exit ()
@@ -118,7 +119,7 @@
     (with-foreign-object (err :pointer)
       (let ((handle (cl-mpg123-cffi:new (or decoder (null-pointer)) err)))
         (when (null-pointer-p handle)
-          (error "Failed to create file handle: ~a" (cl-mpg123-cffi:plain-strerror err)))
+          (error 'handler-creation-failed :file file :error (cl-mpg123-cffi:plain-strerror err)))
         (setf (slot-value file 'handle) handle)
         (tg:finalize file (lambda () (dispose-handle handle)))
         (etypecase accepted-format
@@ -184,15 +185,15 @@
 
 (defun check-connected (file)
   (unless (connected file)
-    (error "~a is not connected yet!" file)))
+    (error 'not-connected :file file)))
 
 (defun connect (file &key (path (path file)))
-  (with-generic-error
-      (cl-mpg123-cffi:open
-       (handle file)
-       (etypecase path
-         (string path)
-         (pathname (uiop:native-namestring path)))))
+  (with-error (err 'connection-failed :file file :error err :path path )
+    (cl-mpg123-cffi:open
+     (handle file)
+     (etypecase path
+       (string path)
+       (pathname (uiop:native-namestring path)))))
   (set-connected T file)
   (setf (slot-value file 'path) path)
   (multiple-value-bind (rate channels encoding) (file-format file)
@@ -203,13 +204,15 @@
 
 (defun disconnect (file)
   (check-connected file)
-  (with-generic-error
-      (cl-mpg123-cffi:close (handle file)))
+  (with-error (err 'disconnection-failed :file file :error err)
+    (cl-mpg123-cffi:close (handle file)))
   (set-connected NIL file)
   file)
 
 (defun (setf decoder) (decoder file)
-  (with-generic-error (cl-mpg123-cffi:decoder (handle file) decoder))
+  (with-error (err 'decoder-set-failed :file file :error err :decoder decoder)
+    (cl-mpg123-cffi:decoder (handle file) decoder))
+  (setf (slot-value file 'decoder) decoder)
   decoder)
 
 (defun decoders ()
@@ -240,7 +243,8 @@
 
 (defun read-directly (file buffer-pointer buffer-size)
   (with-foreign-object (done 'size_t)
-    (with-generic-error (cl-mpg123-cffi:read (handle file) buffer-pointer buffer-size done))
+    (with-error (err 'read-failed :file file :error err :buffer buffer-pointer :buffer-size buffer-size)
+      (cl-mpg123-cffi:read (handle file) buffer-pointer buffer-size done))
     (mem-ref done 'size_t)))
 
 (defun process (file &key (buffer (buffer file))
@@ -250,57 +254,69 @@
 
 (defun decode (file in in-size out out-size)
   (with-foreign-object (done 'size_t)
-    (with-generic-error (cl-mpg123-cffi:decode (handle file) in in-size out out-size done))
+    (with-error (err 'decode-failed :file file :error err :in-buffer in :in-size in-size :out-buffer out :out-size out-size)
+      (cl-mpg123-cffi:decode (handle file) in in-size out out-size done))
     (mem-ref done 'size_t)))
 
 (defun decode-frame (file)
   (with-foreign-values ((num 'off_t) (audio :pointer) (bytes 'size_t))
-    (with-generic-error (cl-mpg123-cffi:decode-frame (handle file) num audio bytes))))
+    (with-error (err 'frame-decode-failed :file file :error err)
+      (cl-mpg123-cffi:decode-frame (handle file) num audio bytes))))
 
 (defun sample-position (file)
-  (with-negative-error (cl-mpg123-cffi:tell (handle file))))
+  (with-negative-error ('query-failed :file file :query 'sample-position)
+    (cl-mpg123-cffi:tell (handle file))))
 
 (defun frame-position (file)
-  (with-negative-error (cl-mpg123-cffi:tellframe (handle file))))
+  (with-negative-error ('query-failed :file file :query 'frame-position)
+    (cl-mpg123-cffi:tellframe (handle file))))
 
 (defun stream-position (file)
-  (with-negative-error (cl-mpg123-cffi:tell-stream (handle file))))
+  (with-negative-error ('query-failed :file file :query 'stream-position)
+    (cl-mpg123-cffi:tell-stream (handle file))))
 
 (defun seek (file position &key (mode :absolute) (by :sample))
   (let ((whence (ecase mode (:absolute :set) (:relative :cur) (:from-end :end))))
-    (with-negative-error
+    (with-negative-error ('seek-failed :file file :seek-position position :mode mode :by by)
       (ecase by
         (:sample (cl-mpg123-cffi:seek (handle file) position whence))
         (:frame (cl-mpg123-cffi:seek-frame (handle file) position whence))
         (:second (seek file (time-frame-index file position) :by :frame))))))
 
 (defun time-frame-index (file seconds)
-  (with-negative-error (cl-mpg123-cffi:timeframe (handle file) (float seconds 0.0d0))))
+  (with-negative-error ('query-failed :file file :query 'time-frame-index)
+    (cl-mpg123-cffi:timeframe (handle file) (float seconds 0.0d0))))
 
 (defun equalizer (file channel band)
   (assert (<= 0 band 31) () "Equalizer band must be within [0,31].")
-  (with-zero-error (cl-mpg123-cffi:geteq (handle file) channel band)))
+  (with-zero-error ('equalizer-query-failed :file file :channel channel :band band)
+    (cl-mpg123-cffi:geteq (handle file) channel band)))
 
 (defun (setf equalizer) (value file channel band)
   (assert (<= 0 band 31) () "Equalizer band must be within [0,31].")
-  (with-generic-error (cl-mpg123-cffi:eq (handle file) channel band value)))
+  (with-error (err 'equalizer-set-failed :file file :error err :value value :channel channel :band band)
+    (cl-mpg123-cffi:eq (handle file) channel band value)))
 
 (defun reset-equalizer (file)
-  (with-generic-error (cl-mpg123-cffi:reset-eq (handle file))))
+  (with-error (err 'equalizer-reset-failed :file file :error err)
+    (cl-mpg123-cffi:reset-eq (handle file))))
 
 (defun volume (file)
   (with-foreign-values ((base :double) (really :double) (rva-db :double))
-    (with-generic-error (cl-mpg123-cffi:getvolume (handle file) base really rva-db))))
+    (with-error (err 'volume-query-failed :file file :error err)
+      (cl-mpg123-cffi:getvolume (handle file) base really rva-db))))
 
 (defun (setf volume) (volume file &key relative)
-  (if relative
-      (with-generic-error (cl-mpg123-cffi:volume-change (handle file) volume))
-      (with-generic-error (cl-mpg123-cffi:volume (handle file) volume))))
+  (with-error (err 'volume-set-failed :file file :error err :relative relative :value volume)
+    (if relative
+        (cl-mpg123-cffi:volume-change (handle file) volume)
+        (cl-mpg123-cffi:volume (handle file) volume))))
 
 (defun info (file)
   (check-connected file)
   (with-foreign-object (info :pointer)
-    (with-generic-error (cl-mpg123-cffi:info (handle file) info))
+    (with-error (err 'query-failed :file file :query 'info :error err)
+      (cl-mpg123-cffi:info (handle file) info))
     (list :version (cl-mpg123-cffi:frameinfo-version info)
           :layer (cl-mpg123-cffi:frameinfo-layer info)
           :rate (cl-mpg123-cffi:frameinfo-rate info)
@@ -315,29 +331,35 @@
 (defun file-format (file)
   (check-connected file)
   (with-foreign-values ((rate :long) (channels :int) (encoding 'cl-mpg123-cffi:enc))
-    (with-generic-error (cl-mpg123-cffi:getformat (handle file) rate channels encoding))))
+    (with-error (err 'query-failed :file file :error err)
+      (cl-mpg123-cffi:getformat (handle file) rate channels encoding))))
 
 (defun scan (file)
   (unless (scanned file)
-    (with-generic-error (cl-mpg123-cffi:scan (handle file)))
+    (with-error (err 'scan-failed :file file :error err)
+      (cl-mpg123-cffi:scan (handle file)))
     (set-scanned T file)
     file))
 
 (defun frame-count (file)
   (scan file)
-  (with-negative-error (cl-mpg123-cffi:framelength (handle file))))
+  (with-negative-error ('query-failed :file file :query 'frame-count)
+    (cl-mpg123-cffi:framelength (handle file))))
 
 (defun sample-count (file)
   (scan file)
-  (with-negative-error (cl-mpg123-cffi:length (handle file))))
+  (with-negative-error ('query-failed :file file :query 'sample-count)
+    (cl-mpg123-cffi:length (handle file))))
 
 (defun frame-seconds (file)
   (scan file)
-  (with-negative-error (cl-mpg123-cffi:tpf (handle file))))
+  (with-negative-error ('query-failed :file file :query 'frame-seconds)
+    (cl-mpg123-cffi:tpf (handle file))))
 
 (defun frame-samples (file)
   (scan file)
-  (with-negative-error (cl-mpg123-cffi:spf (handle file))))
+  (with-negative-error ('query-failed :file file :query 'frame-samples)
+    (cl-mpg123-cffi:spf (handle file))))
 
 (defun track-length (file)
   (* (frame-seconds file)
@@ -347,7 +369,8 @@
   (scan file)
   (multiple-value-bind (id3v1 id3v2)
       (with-foreign-values ((id3v1 :pointer) (id3v2 :pointer))
-        (with-generic-error (cl-mpg123-cffi:id3 (handle file) id3v1 id3v2)))
+        (with-error (err 'id3-query-failed :file file :error err)
+          (cl-mpg123-cffi:id3 (handle file) id3v1 id3v2)))
     (make-instance 'metadata :id3v1 (if (null-pointer-p id3v1) NIL id3v1)
                              :id3v2 (if (null-pointer-p id3v2) NIL id3v2))))
 

@@ -27,19 +27,19 @@
 
 (defmacro with-generic-error (&body form)
   (let ((err (gensym "ERR")))
-    `(with-error (,err "~s failed: ~a" ',form ,err)
+    `(with-error (,err 'generic-error :form ',form :error ,err)
        ,@form)))
 
-(defmacro with-negative-error (&body form)
+(defmacro with-negative-error ((datum &rest datum-args) &body form)
   (let ((res (gensym "RES")))
     `(let ((,res (progn ,@form)))
-       (when (< ,res 0) (error "Failed to execute ~s." ',form))
+       (when (< ,res 0) (error ,datum ,@datum-args))
        ,res)))
 
-(defmacro with-zero-error (&body form)
+(defmacro with-zero-error ((datum &rest datum-args) &body form)
   (let ((res (gensym "RES")))
     `(let ((,res (progn ,@form)))
-       (when (= ,res 0) (error "Failed to execute ~s." ',form))
+       (when (= ,res 0) (error ,datum ,@datum-args))
        ,res)))
 
 (defun string-nil (string)

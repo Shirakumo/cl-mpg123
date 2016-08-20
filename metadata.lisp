@@ -78,7 +78,7 @@
 
 (defun field (name metadata)
   (let ((name (or (id3v2-type name)
-                   (error "Unknown id3v2 frame type ~s." name))))
+                   (error 'unknown-id3v2-frame-type :name name))))
     (loop for (type lang desc text) in (fields metadata)
           when (eql name type)
           collect (list lang desc text))))

@@ -15,6 +15,7 @@
   :serial T
   :components ((:file "package")
                (:file "toolkit")
+               (:file "conditions")
                (:file "low-level")
                (:file "id3-data")
                (:file "metadata")

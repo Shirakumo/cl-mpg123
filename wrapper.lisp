@@ -339,14 +339,15 @@
   (* (frame-seconds file)
      (frame-count file)))
 
-(defun metadata (file)
+(defun metadata (file &optional (id3v1-encoding :utf-8))
   (scan file)
   (multiple-value-bind (id3v1 id3v2)
       (with-foreign-values ((id3v1 :pointer) (id3v2 :pointer))
         (with-error (err 'id3-query-failed :file file :error err)
           (cl-mpg123-cffi:id3 (handle file) id3v1 id3v2)))
     (make-instance 'metadata :id3v1 (if (null-pointer-p id3v1) NIL id3v1)
-                             :id3v2 (if (null-pointer-p id3v2) NIL id3v2))))
+                             :id3v2 (if (null-pointer-p id3v2) NIL id3v2)
+                             :id3v1-encoding id3v1-encoding)))
 
 (defmethod describe-object ((file file) stream)
   (format stream "~

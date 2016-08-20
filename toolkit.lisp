@@ -46,8 +46,8 @@
   (when (and string (string/= "" string))
     string))
 
-(defun direct-str (pointer length)
-  (string-nil (or (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding :utf-8))
+(defun direct-str (pointer length &optional (encoding :utf-8))
+  (string-nil (or (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding encoding))
                   (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding :iso-8859-1)))))
 
 (defun mstring (mstring)

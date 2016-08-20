@@ -56,6 +56,11 @@
    :accepted-format T
    :buffer-size T))
 
+(defmethod print-object ((file file) stream)
+  (print-unreadable-object (file stream :type T)
+    (format stream "~@[~s~]~:[~; :CONNECTED~]"
+            (path file) (connected file))))
+
 (defmethod shared-initialize :after ((file file) slots &key decoder accepted-format buffer-size)
   (init)
   (with-foreign-object (err :pointer)

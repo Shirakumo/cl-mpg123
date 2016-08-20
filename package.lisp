@@ -239,8 +239,10 @@
    #:id3-query-failed)
   ;; id3-data
   (:export
+   #:*id3v1-genre-list*
    #:id3v1-genre
    #:id3v2-genre
+   #:*id3v2-type-map*
    #:id3v2-type)
   ;; metadata.lisp
   (:export

@@ -42,6 +42,9 @@
   (cl-mpg123-cffi:close handle)
   (cl-mpg123-cffi:delete handle))
 
+(defun make-file (path &rest args &key &allow-other-keys)
+  (apply #'make-instance 'file :path path args))
+
 (defclass file ()
   ((handle :initform NIL :reader handle)
    (connected :initform NIL :reader connected :writer set-connected)

@@ -214,6 +214,7 @@
   (:export
    #:init
    #:exit
+   #:make-file
    #:file
    #:handle
    #:connected

@@ -278,7 +278,8 @@
         (:second (case mode
                    (:absolute (seek file (time-frame-index file position) :by :frame))
                    (:relative (seek file (time-frame-index file (+ (track-position file) position)) :by :frame))
-                   (:from-end (seek file (time-frame-index file (- (track-length file) position)) :by :frame))))))))
+                   (:from-end (seek file (time-frame-index file (- (track-length file) position)) :by :frame)))
+         (track-position file))))))
 
 (defun time-frame-index (file seconds)
   (with-negative-error ('query-failed :file file :query 'time-frame-index)
@@ -292,7 +293,8 @@
 (defun (setf equalizer) (value file channel band)
   (assert (<= 0 band 31) () "Equalizer band must be within [0,31].")
   (with-error (err 'equalizer-set-failed :file file :error err :value value :channel channel :band band)
-    (cl-mpg123-cffi:eq (handle file) channel band (float value 0.0d0))))
+    (cl-mpg123-cffi:eq (handle file) channel band (float value 0.0d0)))
+  value)
 
 (defun reset-equalizer (file)
   (with-error (err 'equalizer-reset-failed :file file :error err)
@@ -307,7 +309,8 @@
   (with-error (err 'volume-set-failed :file file :error err :relative relative :value volume)
     (if relative
         (cl-mpg123-cffi:volume-change (handle file) (float volume 0.0d0))
-        (cl-mpg123-cffi:volume (handle file) (float volume 0.0d0)))))
+        (cl-mpg123-cffi:volume (handle file) (float volume 0.0d0))))
+  volume)
 
 (defun info (file)
   (check-connected file)

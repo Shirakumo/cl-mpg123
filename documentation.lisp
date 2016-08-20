@@ -1027,6 +1027,9 @@ See FILE
 See SCAN
 See METADATA")
 
+  (function format-time
+    "Formats the given seconds in H:MM:SS format.")
+
   (function decoders
     "Returns a list of all decoder backends the library knows about.
 

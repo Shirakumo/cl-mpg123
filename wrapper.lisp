@@ -379,6 +379,12 @@
                              :id3v2 (if (null-pointer-p id3v2) NIL id3v2)
                              :id3v1-encoding id3v1-encoding)))
 
+(defun format-time (secs)
+  (format NIL "~a:~2,'0d:~2,'0d"
+          (round (/ secs 60 60))
+          (mod (round (/ secs 60)) 60)
+          (mod (round secs) 60)))
+
 (defmethod describe-object ((file file) stream)
   (format stream "~
 ~a
@@ -387,6 +393,12 @@
 Path:         ~a"
           file (type-of file) (path file))
   (cond ((connected file)
+         (format stream "
+Length:       ~a
+Frames:       ~a
+Samples:      ~a"
+                 (format-time (track-length file)) (frame-count file) (sample-count file))
+         
          (destructuring-bind (&key version layer bitrate &allow-other-keys) (info file)
            (multiple-value-bind (rate channels encoding) (file-format file)
              (format stream "~%

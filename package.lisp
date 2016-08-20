@@ -79,7 +79,7 @@
    #:icy
    #:new-icy
    #:parms
-   #:flags
+   #:param-flags
    #:param-rva
    #:feature-set
    #:errors

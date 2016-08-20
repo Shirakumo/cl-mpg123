@@ -101,7 +101,7 @@
   :feedpool
   :feedbuffer)
 
-(defcenum flags
+(defcenum param-flags
   (:force-mono          #x00007)
   (:mono-left           #x00001)
   (:mono-right          #x00002)

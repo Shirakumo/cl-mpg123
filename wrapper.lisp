@@ -275,7 +275,10 @@
       (ecase by
         (:sample (cl-mpg123-cffi:seek (handle file) position whence))
         (:frame (cl-mpg123-cffi:seek-frame (handle file) position whence))
-        (:second (seek file (time-frame-index file position) :by :frame))))))
+        (:second (case mode
+                   (:absolute (seek file (time-frame-index file position) :by :frame))
+                   (:relative (seek file (time-frame-index file (+ (track-position file) position)) :by :frame))
+                   (:from-end (seek file (time-frame-index file (- (track-length file) position)) :by :frame))))))))
 
 (defun time-frame-index (file seconds)
   (with-negative-error ('query-failed :file file :query 'time-frame-index)

@@ -15,8 +15,9 @@
   :serial T
   :components ((:file "package")
                (:file "toolkit")
-               (:file "genre")
                (:file "low-level")
+               (:file "id3-data")
+               (:file "metadata")
                (:file "wrapper")
                (:file "documentation"))
   :depends-on (:cffi

@@ -76,7 +76,7 @@
    (skip-id3v2 :initarg :skip-id3v2 :reader skip-id3v2)
    (ignore-infoframe :initarg :ignore-infoframe :reader ignore-infoframe)
    (auto-resample :initarg :auto-resample :reader auto-resample)
-   (pictures :initarg :pictures :reader pictures))
+   (parse-pictures :initarg :parse-pictures :reader parse-pictures))
   (:default-initargs
    :path NIL
    :decoder NIL
@@ -100,7 +100,7 @@
    :skip-id3v2 NIL
    :ignore-infoframe NIL
    :auto-resample T
-   :pictures T))
+   :parse-pictures T))
 
 (defmethod print-object ((file file) stream)
   (print-unreadable-object (file stream :type T)
@@ -115,7 +115,7 @@
   (with-slots (decoder accepted-format buffer-size force-rate down-sample rva
                downspeed upspeed start-frame decode-frames outscale index-size
                preframes force-channels force-8bit gapless fuzzy-seek
-               force-float skip-id3v2 ignore-infoframe auto-resample pictures) file
+               force-float skip-id3v2 ignore-infoframe auto-resample parse-pictures) file
     (with-foreign-object (err :pointer)
       (let ((handle (cl-mpg123-cffi:new (or decoder (null-pointer)) err)))
         (when (null-pointer-p handle)
@@ -172,7 +172,7 @@
             (when skip-id3v2 (add-flag :skip-id3v2))
             (when ignore-infoframe (add-flag :ignore-infoframe))
             (when auto-resample (add-flag :auto-resample))
-            (when pictures (add-flag :picture))))))))
+            (when parse-pictures (add-flag :picture))))))))
 
 (defmethod reinitialize-instance :around ((file file) &key)
   (dispose-handle (handle file))

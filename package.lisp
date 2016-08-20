@@ -291,7 +291,7 @@
    #:skip-id3v2
    #:ignore-infoframe
    #:auto-resample
-   #:pictures
+   #:parse-pictures
    #:connect
    #:disconnect
    #:decoders

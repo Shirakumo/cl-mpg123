@@ -111,10 +111,8 @@
                            (return)))))))))))
 
 (defun main-high-level (file &key driver output (buffer-size T))
-  (let* ((file (make-instance 'cl-mpg123:file :path file :buffer-size buffer-size))
-         (out (make-instance 'cl-out123:output :driver driver :device output)))
-    (cl-mpg123:connect file)
-    (cl-out123:connect out)
+  (let* ((file (cl-mpg123:connect (make-instance 'cl-mpg123:file   :path file :buffer-size buffer-size)))
+         (out  (cl-out123:connect (make-instance 'cl-out123:output :driver driver :device output))))
     (v:info :mpg123 "Playback device ~a / ~a" (cl-out123:driver out) (cl-out123:device out))
     (multiple-value-bind (rate channels encoding) (cl-mpg123:file-format file)
       (v:info :mpg123 "Input format ~a Hz, ~a channels, ~a encoded." rate channels encoding)

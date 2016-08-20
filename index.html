@@ -1,0 +1,4230 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>CL-MPG123</title>
+    <style type="text/css">
+      html{font-family: serif;}
+      code a{text-decoration: none;}
+      h1{display: inline-block; margin-bottom: 0;}
+      code{font-family: monospace;}
+      h4{display: inline-block; margin: 0; padding: 0;}
+      #symbol-index ul{list-style: none;}
+      .package li{margin-bottom: 20px;}
+      .package pre{margin: 0 0 0 10px; white-space: pre-wrap;}
+      .package .nicknames{font-weight: normal;}
+      table{margin: 20px;}
+      td{padding-bottom: 10px;}
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>cl-mpg123</h1>
+      <span class="version">1.0.0</span>
+      <p class="description">Bindings to libmpg123, providing cross-platform, fast MPG1/2/3 decoding.</p>
+    </header>
+    <div id="content">
+      <article>
+        
+          <span><h2>About cl-mpg123</h2>
+
+<p>This is a bindings and wrapper library to <a href="https://www.mpg123.de">libmpg123</a> allowing for convenient, extensive, and fast decoding of MPEG1/2/3 (most prominently mp3) files.</p>
+
+<h2>How To</h2>
+
+<p>Precompiled versions of the underlying library are included in this. If you want to build it manually however, refer to the <a href="https://www.mpg123.de/">mpg123</a> page.</p>
+
+<p>Load the system through ASDF or Quicklisp:</p>
+
+<pre><code>(ql:quickload :cl-mpg123)
+</code></pre>
+
+<p>Create a new <code><a href="#CL-MPG123:FILE">file</a></code> object:</p>
+
+<pre><code>(<a href="http://l1sp.org/cl/defvar">defvar</a> *file* (<a href="#CL-MPG123:MAKE-FILE">cl-mpg123:make-file</a> #p&quot;~/my-cool-music.mp3&quot;))
+</code></pre>
+
+<p>This will initialise a file and set the requested parameters. As it is now, we've left everything up to defaults. If you need more tailored control as to how the file will be treated, see the <code><a href="#CL-MPG123:FILE">file</a></code> class documentation. Next we will want to actually open up the underlying file so that we can look into it.</p>
+
+<pre><code>(<a href="#CL-MPG123:CONNECT">cl-mpg123:connect</a> *file*)
+</code></pre>
+
+<p>Processing the actual sound data, is just a matter of calling <code><a href="#CL-MPG123:PROCESS">process</a></code> and passing the <code><a href="#CL-MPG123:BUFFER">buffer</a></code> to something that can do something useful with the raw audio data. However, unless you specifically chose the audio data format yourself, you'll first want to query that:</p>
+
+<pre><code>(<a href="#CL-MPG123:FILE-FORMAT">cl-mpg123:file-format</a> *file*)
+</code></pre>
+
+<p>This will give you the rate, channels, and encoding of the file so that you can configure your audio processing library accordingly. Next we can process the data in a loop:</p>
+
+<pre><code>(<a href="http://l1sp.org/cl/loop">loop</a> with buffer = (<a href="#CL-MPG123:BUFFER">cl-mpg123:buffer</a> *file*)
+      for bytes = (<a href="#CL-MPG123:PROCESS">cl-mpg123:process</a> *file*)
+      until (<a href="http://l1sp.org/cl/=">=</a> 0 bytes)
+      do (process-buffer-somehow buffer bytes))
+</code></pre>
+
+<p>This library is also capable of extracting ID3 tags from the file. A quick summary of information found in a file can be displayed with <code><a href="http://l1sp.org/cl/describe">describe</a></code>:</p>
+
+<pre><code>(<a href="http://l1sp.org/cl/describe">describe</a> *file*)
+</code></pre>
+
+<p>Direct access to the metadata object is possible with <code><a href="#CL-MPG123:METADATA">metadata</a></code>. This object will then allow you to retrieve the values of various tags through <code><a href="#CL-MPG123:FIELD">field</a></code> and <code><a href="#CL-MPG123:FIELD-TEXT">field-text</a></code>:</p>
+
+<pre><code>(<a href="#CL-MPG123:FIELD-TEXT">cl-mpg123:field-text</a> :album (<a href="#CL-MPG123:METADATA">metadata</a> *file*))
+</code></pre>
+
+<p>For the list of possible field names, see <code>*id3v2-type-map</code>. For a listing of all recognised tags, simply use <code><a href="#CL-MPG123:FIELDS">fields</a></code> on the <code><a href="#CL-MPG123:METADATA">metadata</a></code> object. If possible, picture tags are also extracted and converted. You can get your hands on those through the <code><a href="#CL-MPG123:PICTURES">pictures</a></code> reader. Returned are a list of <code><a href="#CL-MPG123:PICTURE">picture</a></code> objects that will encapsulate the data.</p>
+
+<p>Should you wish to change parameters for the decoding or the file itself, you can do so via <code><a href="http://l1sp.org/cl/reinitialize-instance">reinitialize-instance</a></code>. Just be aware that doing so will close the handle and is thus not recommended during processing.</p>
+
+<p>Also included in <code><a href="#CL-MPG123-CFFI:LIBMPG123">libmpg123</a></code> are volume changing and a full 32 band equalizer. The volume can be accessed by, naturally, <code><a href="#CL-MPG123:VOLUME">volume</a></code>, and the equalizer by <code><a href="#CL-MPG123:EQUALIZER">equalizer</a></code>.</p>
+
+<pre><code>(<a href="http://l1sp.org/cl/setf">setf</a> (<a href="#CL-MPG123:VOLUME">cl-mpg123:volume</a> *file*) 0.5)
+(<a href="#CL-MPG123:VOLUME">cl-mpg123:volume</a> *file*)
+</code></pre>
+
+<p>You can also seek around in the file if necessary. Doing so is done by the single <code><a href="#CL-MPG123:SEEK">seek</a></code> function which allows you to seek by samples, frames, or track seconds, either relatively, absolutely, or from the end of the file.</p>
+
+<pre><code>(<a href="#CL-MPG123:SEEK">cl-mpg123:seek</a> *file* 1 :by :second)
+</code></pre>
+
+<p>Once you know you are done with the file, you can <code><a href="#CL-MPG123:DISCONNECT">disconnect</a></code> it to release the underlying file descriptor. Once the file is GCed, its handler and buffer will automatically be freed so that there's no worry about permanent memory leaks.</p>
+
+<pre><code>(<a href="#CL-MPG123:DISCONNECT">cl-mpg123:disconnect</a> *file*)
+</code></pre>
+
+<p>And that's about it. See the individual functions for more information on what exactly you can get or change. If you want to look at a full example that actually plays something, see the <code>cl-mpg123-example</code> system, which shows how to use it in combination with <code>cl-out123</code> using either the low-level binding interface, or the high-level wrapper interface shown here.</p>
+
+<h2>Also See</h2>
+
+<ul>
+<li><a href="https://shirakumo.github.org/cl-out123/">cl-out123</a> For simple audio output.</li>
+</ul>
+</span>
+        
+      </article>
+      <article>
+        
+          <h2>Copyright</h2>
+          <span>cl-mpg123</span> is licensed under the <span><a href="https://tldrlegal.com/search?q=Artistic">Artistic</a></span> license.
+          
+            © <span>Nicolas Hafner &lt;shinmera@tymoon.eu&gt;</span>
+            .
+          
+          This library can be obtained on <a href="https://github.com/Shirakumo/cl-mpg123">https://github.com/Shirakumo/cl-mpg123</a>.
+        
+      </article>
+      
+        <article id="symbol-index">
+          <h2>Package Index</h2>
+          <ul><li class="package">
+              <h3>
+                <a name="CL-MPG123" href="#CL-MPG123">CL-MPG123</a>
+                <span class="nicknames">(ORG.SHIRAKUMO.FRAF.MPG123)</span>
+              </h3>
+              <ul><li>
+                  <a name="CL-MPG123:*ID3V1-GENRE-LIST*"/>
+                  <article>
+                    <header class="special">
+                      <span class="type">special</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:*ID3V1-GENRE-LIST*" class="name">*ID3V1-GENRE-LIST*</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">A list of genres that the ID3V1 genre index references. Includes WinAmp extensions.
+See https://de.wikipedia.org/wiki/Liste_der_ID3v1-Genres</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:*ID3V2-TYPE-MAP*"/>
+                  <article>
+                    <header class="special">
+                      <span class="type">special</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:*ID3V2-TYPE-MAP*" class="name">*ID3V2-TYPE-MAP*</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">A map of id3v2 frame type name to human-readable names.
+See http://id3.org/d3v2.3.0</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FILE"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FILE" class="name">FILE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Container class for a file.
+
+Manages all the decoding information so that it is easily accessible.
+Also takes care of managing the underlying C values so that you don't
+have to worry about garbage collection or buffer allocation and so forth.
+It also takes care of setting up the desired decoding parameters and flags.
+
+The slots of the file are not settable, however you can reconfigure the
+file at any point using REINITIALIZE-INSTANCE. Note that this will have
+to DISCONNECT the file and delete its handle first. It will reCONNECT
+if it was previously connected, but you cannot do this if you are in the
+middle of processing data or need to otherwise preserve state.
+
+You can find more information about most of the properties that can be set
+via initargs in the mpg123.h mpg123_params and mpg123_param_flags enums.
+See https://www.mpg123.de/api/group__mpg123__init.shtml#ga73a8ff3363028b89afc72b3ea032b9cb
+
+See HANDLE
+See CONNECTED
+See SCANNED
+See BUFFER
+See RATE
+See CHANNELS
+See ENCODING
+See PATH
+See DECODER
+See ACCEPTED-FORMAT
+See BUFFER-SIZE
+See FORCE-RATE
+See DOWN-SAMPLE
+See RVA
+See DOWNSPEED
+See UPSPEED
+See START-FRAME
+See DECODE-FRAMES
+See OUTSCALE
+See INDEX-SIZE
+See PREFRAMES
+See FORCE-CHANNELS
+See FORCE-8BIT
+See GAPLESS
+See FUZZY-SEEK
+See FORCE-FLOAT
+See SKIP-ID3V2
+See IGNORE-INFOFRAME
+See AUTO-RESAMPLE
+See PICTURES
+See CONNECT
+See DISCONNECT
+See READ-DIRECTLY
+See PROCESS
+See PROCESS-TO-VECTOR
+See PROCESS-INTO-VECTOR
+See DECODE
+See DECODE-FRAME
+See SAMPLE-POSITION
+See FRAME-POSITION
+See STREAM-POSITION
+See SEEK
+See TIME-FRAME-INDEX
+See EQUALIZER
+See RESET-EQUALIZER
+See VOLUME
+See INFO
+See FILE-FORMAT
+See SCAN
+See FRAME-COUNT
+See SAMPLE-COUNT
+See FRAME-SECONDS
+See FRAME-SAMPLES
+See TRACK-LENGTH
+See METADATA</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:METADATA"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:METADATA" class="name">METADATA</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Class container for ID3 metadata.
+
+When re/initialising this, you should pass the ID3V1/2 struct pointers as
+the respective initargs. Note that ID3V1 and ID3V2 values will coexist, but
+ID3V2 values should always come before ID3V1 values in the resulting fields
+list. Also note that duplicate (by EQUAL) entries are not stored.
+
+Note that when the metadata is reinitialised, all fields and pictures are
+cleared out first, before potentially being repopulated by the passed args.
+
+Note that ID3V1 text values are by default parsed by UTF-8 first and by
+ISO-8859-1 if that fails. See DIRECT-STR. You can override the UTF-8 default
+by specifying the :ID3V1-ENCODING initarg.
+
+See METADATA
+See VERSION
+See FIELDS
+See PICTURES
+See FIELD
+See FIELD-TEXT</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:PICTURE"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:PICTURE" class="name">PICTURE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Container class for a picture encapsulated in an ID3 tag.
+
+The data is copied over to a lisp (unsigned-byte 8) vector, so the picture 
+data will stay fresh even if the source file or id3 data is freed.
+
+See KIND
+See DESCRIPTION
+See MIME-TYPE
+See DATA</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:CONNECTION-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:CONNECTION-FAILED" class="name">CONNECTION-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when connecting to/opening the underlying file fails.
+
+See CONNECT
+See MPG-FILE-STRING-ERROR
+See PATH</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DECODE-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DECODE-FAILED" class="name">DECODE-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DECODER-SET-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DECODER-SET-FAILED" class="name">DECODER-SET-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when changing the decoder of a file fails.
+
+See VALUE
+See (SETF DECODER)
+See MPG-FILE-STRING-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DISCONNECTION-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DISCONNECTION-FAILED" class="name">DISCONNECTION-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when disconnecting from/closing the underlying file fails.
+
+See DISCONNECT
+See MPG-FILE-STRING-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:EQUALIZER-RESET-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:EQUALIZER-RESET-FAILED" class="name">EQUALIZER-RESET-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when resetting the equalizer failed.
+
+See MPG-FILE-STRING_ERROR
+See RESET-EQUALIZER</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:EQUALIZER-SET-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:EQUALIZER-SET-FAILED" class="name">EQUALIZER-SET-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when setting an equalizer band value failed.
+
+See BAND
+See CHANNEL
+See MPG-FILE-STRING-ERROR
+See (SETF EQUALIZER)</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:ERROR-STRING-ERROR"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:ERROR-STRING-ERROR" class="name">ERROR-STRING-ERROR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition superclass for all errors that include an error string from the underlying library.
+
+See MPG-ERROR
+See ERROR-STRING</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FRAME-DECODE-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FRAME-DECODE-FAILED" class="name">FRAME-DECODE-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when mpg123 fails to decode a frame.
+
+See MPG-FILE-STRING-ERROR
+See DECODE-FRAME</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:GENERIC-ERROR"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:GENERIC-ERROR" class="name">GENERIC-ERROR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">A generic error class to be used in situations where no more specific class applies.
+
+See FORM
+See ERROR-STRING-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:HANDLER-CREATION-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:HANDLER-CREATION-FAILED" class="name">HANDLER-CREATION-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when creating a new mpg handler object fails.
+
+See MPG-FILE-STRING-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:ID3-QUERY-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:ID3-QUERY-FAILED" class="name">ID3-QUERY-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when retrieving the ID3 metadata failed.
+
+See MPG-FILE-STRING-ERROR
+See METADATA</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:INIT-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:INIT-FAILED" class="name">INIT-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled in the case that the initialisation of the library fails.
+
+See INIT
+See ERROR-STRING-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:MPG-ERROR"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:MPG-ERROR" class="name">MPG-ERROR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition superclass for all errors related to this library.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:MPG-FILE-ERROR"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:MPG-FILE-ERROR" class="name">MPG-FILE-ERROR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition superclass for all errors that relate to a FILE object.
+
+See FILE
+See MPG-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:MPG-FILE-STRING-ERROR"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:MPG-FILE-STRING-ERROR" class="name">MPG-FILE-STRING-ERROR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Combination of MPG-FILE-ERROR and ERROR-STRING-ERROR.
+
+See MPG-FILE-ERROR
+See ERROR-STRING-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:NOT-CONNECTED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:NOT-CONNECTED" class="name">NOT-CONNECTED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when an attempt is made to use a function that requires the file object to be connected, but it isn't.
+
+See MPG-FILE-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:QUERY-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:QUERY-FAILED" class="name">QUERY-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Generic condition signalled when the querying for a value failed.
+
+See QUERY
+See MPG-FILE-ERROR
+See GENERIC-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:READ-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:READ-FAILED" class="name">READ-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when mpg123 fails to read into a buffer.
+
+See BUFFER
+See BUFFER-SIZE
+See MPG-FILE-STRING-ERROR
+See DIRECT-READ</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SCAN-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SCAN-FAILED" class="name">SCAN-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when scanning the file for metadata failed.
+
+See MPG-FILE-STRING-ERROR
+See SCAN</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SEEK-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SEEK-FAILED" class="name">SEEK-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when a seek to a different position in the file failed.
+
+See BY
+See MODE
+See SEEK-POSITION
+See MPG-FILE-ERROR
+See SEEK</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:UNKNOWN-ID3V2-FRAME-TYPE"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:UNKNOWN-ID3V2-FRAME-TYPE" class="name">UNKNOWN-ID3V2-FRAME-TYPE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when an unknown id3v2 frame type name is requested from a metadata object.
+
+See NAME
+See METADATA
+See MPG-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:VOLUME-QUERY-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:VOLUME-QUERY-FAILED" class="name">VOLUME-QUERY-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when querying for the current volume failed.
+
+See MPG-FILE-STRING-ERROR
+See VOLUME</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:VOLUME-SET-FAILED"/>
+                  <article>
+                    <header class="condition">
+                      <span class="type">condition</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:VOLUME-SET-FAILED" class="name">VOLUME-SET-FAILED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Condition signalled when setting the current volume failed.
+
+See MPG-FILE-STRING-ERROR
+See (SETF VOLUME)
+See RELATIVE
+See VALUE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DECODER"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DECODER" class="name">DECODER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">The decoder driver to use as backend.
+
+See SUPPORTED-DECODERS for a list of decoders that can be used as a backend.
+
+This is SETFable.
+
+See FILE
+See DECODER-SET-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:EQUALIZER"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:EQUALIZER" class="name">EQUALIZER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE CHANNEL BAND)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Accesses the equalizer value for the given channel and band.
+
+Channel must be within [0,31].
+
+This is SETFable.
+
+See EQUALIZER-QUERY-FAILED
+See EQUALIZER-SET-FAILED
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:VOLUME"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:VOLUME" class="name">VOLUME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Accesses the volume of the file.
+
+Returned are three values: the base volume, the actual volume including
+potential changes by RVA, and the RVA adjustment made. The volumes are
+linear factors, and the RVA adjustment is in decibel.
+
+This is SETFable. On SETF, an additional keyword argument :relative
+is supported, which says whether to adjust volume relatively to the
+current value, or absolutely.
+
+See VOLUME-QUERY-FAILED
+See VOLUME-SET-FAILED
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:CONNECT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:CONNECT" class="name">CONNECT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE &amp;KEY (PATH (PATH FILE)))</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Connects the file to the underlying file on the filesystem.
+
+This will trigger parsing of several pieces of information within
+the file and open the path to querying the file for properties.
+Naturally it will also allow actually decoding the file.
+
+See FILE
+See CONNECTED
+See CONNECTION-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DECODE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DECODE" class="name">DECODE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE INPUT OUTPUT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Decodes data from the given input vector to the given output vector.
+
+Returns the number of bytes decoded.
+
+See DECODE-DIRECTLY</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DECODE-FRAME"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DECODE-FRAME" class="name">DECODE-FRAME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Decodes the next frame into the library's internal buffer.
+
+This does not store it into the file buffer! BUFFER will not have
+changed!
+
+See FILE
+See FRAME-DECODE-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DECODERS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DECODERS" class="name">DECODERS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns a list of all decoder backends the library knows about.
+
+See SUPPORTED-DECODERS</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DISCONNECT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DISCONNECT" class="name">DISCONNECT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Disconnects the file from the underlying file on the filesystem.
+
+This will free up the file descriptor. And prevent you from decoding
+any more data until the file is connected again.
+
+See FILE
+See CONNECTED
+See DISCONNECTION-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:EXIT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:EXIT" class="name">EXIT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Cleans up the underlying library if not already done so.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FIELD"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FIELD" class="name">FIELD</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(NAME METADATA)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Gathers all fields matching the requested type into a list.
+
+The field type is excluded, so each match is a list of three values:
+language, description, and text.
+
+On an unknown ID3V2 frame type name, an error is signalled.
+
+See METADATA
+See FIELDS
+See ID3V2-TYPE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FIELD-TEXT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FIELD-TEXT" class="name">FIELD-TEXT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(NAME METADATA)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns all text values of the matching fields as multiple values.
+
+This is mostly for convenience when you only care about one or more text
+values of a field.
+
+See FIELD</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FILE-FORMAT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FILE-FORMAT" class="name">FILE-FORMAT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns information about the file's actual format.
+
+Returned are three values, the rate in Hertz, the channels, and
+the encoding used.
+
+See RATE
+See CHANNELS
+See ENCODING
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FRAME-COUNT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FRAME-COUNT" class="name">FRAME-COUNT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the number of frames in the file.
+
+Performs a SCAN if necessary.
+
+See FILE
+See SCAN</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FRAME-POSITION"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FRAME-POSITION" class="name">FRAME-POSITION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the current position as a frame index.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FRAME-SAMPLES"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FRAME-SAMPLES" class="name">FRAME-SAMPLES</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the number of samples per frame.
+
+Performs a SCAN if necessary.
+
+See FILE
+See SCAN</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FRAME-SECONDS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FRAME-SECONDS" class="name">FRAME-SECONDS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the number of seconds a frame encompasses.
+
+Performs a SCAN if necessary.
+
+See FILE
+See SCAN</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:ID3V1-GENRE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:ID3V1-GENRE" class="name">ID3V1-GENRE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(NUM)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the name of the corresponding genre of the integer as defined by id3v1.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:ID3V2-GENRE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:ID3V2-GENRE" class="name">ID3V2-GENRE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(GENRE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Parses the ID3V2 genre string into a list of genres.
+More specifically, it handles ID3V1 references, of which there can be multiple.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:ID3V2-TYPE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:ID3V2-TYPE" class="name">ID3V2-TYPE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(NAME)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the id3v2 frame type keyword for the passed equivalent human-readable name.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:INFO"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:INFO" class="name">INFO</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns various information about the current frame.
+
+Returned is a plist with the following fields:
+:VERSION   The MPEG version, 1.0/2.0/2.5
+:LAYER     The MPEG layer, 1/2/3
+:RATE      The sample rate in Hertz
+:MODE      The channel mode
+:MODE-EXT  The mode extension bit flag
+:FLAGS     A list of frame flags
+:EMPHASIS  The emphasis type
+:BITRATE   The bitrate in kbps 
+:ABR-RATE  The target average bitrate
+:VBR       The VBR mode
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:INIT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:INIT" class="name">INIT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Prepares the underlying library if not already done so.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:MAKE-FILE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:MAKE-FILE" class="name">MAKE-FILE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PATH &amp;REST ARGS &amp;KEY &amp;ALLOW-OTHER-KEYS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Create a new file object pointing to the given path.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:METADATA"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:METADATA" class="name">METADATA</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE &amp;OPTIONAL (ID3V1-ENCODING :UTF-8))</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns a fresh metadata object created from the scanned ID3 tags.
+
+Performs a SCAN if necessary.
+
+The :ID3V1-ENCODING argument specifies which encoding to use for the
+strings in ID3V1 tags, as that is not formally specified and might
+vary by file.
+
+See FILE
+See SCAN
+See METADATA</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:PROCESS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:PROCESS" class="name">PROCESS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Decodes data from the file into the internal buffer.
+
+Note that this will fail grossly if the file's buffer-size / buffer is NIL.
+
+Returns the number of bytes read. See BUFFER for the pointer to the C buffer
+where the actual data is stored.
+
+See READ-DIRECTLY
+See BUFFER
+See BUFFER-SIZE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:PROCESS-INTO-VECTOR"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:PROCESS-INTO-VECTOR" class="name">PROCESS-INTO-VECTOR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE VECTOR &amp;OPTIONAL (OFFSET 0))</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Decodes data from the file into the given octet-vector.
+
+Returns the number of bytes read.
+
+At most (min (length vector) (buffer-size file)) bytes are read.
+
+See PROCESS</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:PROCESS-TO-VECTOR"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:PROCESS-TO-VECTOR" class="name">PROCESS-TO-VECTOR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Decodes data from the file into a new (unsigned-byte 8) vector.
+
+The returned vector will have the exact length fitting to the amount of
+data decoded.
+
+See PROCESS</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:READ-DIRECTLY"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:READ-DIRECTLY" class="name">READ-DIRECTLY</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE BUFFER-POINTER BUFFER-SIZE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Decodes data from the file and stores it in BUFFER, reading at most BUFFER-SIZE bytes.
+
+Returns the number of bytes that were stored in the buffer.
+
+See FILE
+See PROCESS
+See READ-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:RESET-EQUALIZER"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:RESET-EQUALIZER" class="name">RESET-EQUALIZER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Resets the equalizer to its initial values. Which is to say it disables it.
+
+See EQUALIZER-RESET-FAILED
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SAMPLE-COUNT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SAMPLE-COUNT" class="name">SAMPLE-COUNT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the number of samples in the file.
+
+Performs a SCAN if necessary.
+
+See FILE
+See SCAN</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SAMPLE-POSITION"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SAMPLE-POSITION" class="name">SAMPLE-POSITION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the current position as a sample index.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SCAN"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SCAN" class="name">SCAN</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Scans the file for information.
+
+This is only done if a scan has not already been performed.
+
+See SCANNED
+See FILE
+See SCAN-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SEEK"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SEEK" class="name">SEEK</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE POSITION &amp;KEY (MODE :ABSOLUTE) (BY :SAMPLE))</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Seek in the frame.
+
+MODE can be one of :ABSOLUTE :RELATIVE :FROM-END which decides
+whether the given position should be absolute, relative to the
+current position, or from the end, respectively.
+
+BY can be one of :SAMPLE :FRAME :SECOND which decides whether
+seeking should be by the sample, frame, or track seconds index.
+
+Returns the new position as sample, frame, or track seconds index
+respectively.
+
+See FILE
+See SEEK-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:STREAM-POSITION"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:STREAM-POSITION" class="name">STREAM-POSITION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the current position in stream as a byte index.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SUPPORTED-DECODERS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SUPPORTED-DECODERS" class="name">SUPPORTED-DECODERS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns a list of all supported decoder backends.
+
+See DECODERS
+See DECODER</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SUPPORTED-ENCODINGS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SUPPORTED-ENCODINGS" class="name">SUPPORTED-ENCODINGS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns a list of all supported encoding types.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SUPPORTED-RATES"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SUPPORTED-RATES" class="name">SUPPORTED-RATES</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:TIME-FRAME-INDEX"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:TIME-FRAME-INDEX" class="name">TIME-FRAME-INDEX</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE SECONDS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the frame index of a given track seconds index.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:TRACK-LENGTH"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:TRACK-LENGTH" class="name">TRACK-LENGTH</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the length of the track in seconds.
+
+See FRAME-SECONDS
+See FRAME-COUNT</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:TRACK-POSITION"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:TRACK-POSITION" class="name">TRACK-POSITION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FILE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the current track seconds position.
+
+See FRAME-SECONDS
+See FRAME-POSITION</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:ACCEPTED-FORMAT"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:ACCEPTED-FORMAT" class="name">ACCEPTED-FORMAT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the accepted format for the decoder.
+
+This can be NIL for none, T for all, or a list of three values:
+ (RATE CHANNELS ENCODINGS) where RATE is the accepted rate in Hertz,
+CHANNELS is one of :left :right :left-right, and ENCODINGS is a list of
+allowed data encodings, each value being one of:
+:signed-8 :unsigned-8 :signed-16 :unsigned-16 :signed-24 :unsigned-24
+:signed-32 :unsigned-32 :ulaw-8 :alaw-8 :float-32 :float-64
+
+This can be set via the :accepted-format initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:AUTO-RESAMPLE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:AUTO-RESAMPLE" class="name">AUTO-RESAMPLE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether to automatic internal resampling of any kind.
+
+This can be set via the :auto-resample initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:BAND"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:BAND" class="name">BAND</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the band that was attempted to be accessed.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:BUFFER"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:BUFFER" class="name">BUFFER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns a pointer to the C char buffer that is used to store decoded data.
+
+This might be NIL if the buffer-size is NIL.
+
+See FILE
+See BUFFER-SIZE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:BUFFER-SIZE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:BUFFER-SIZE" class="name">BUFFER-SIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the size of the internal buffer used to store decoded data.
+
+This can be NIL for no buffer, T for automatic size, or an integer specifying
+the number of bytes to use. The automatic size is picked by 
+CL-MPG123-CFFI:OUTBLOCK.
+
+This can be set via the :buffer-size initarg.
+
+See FILE
+See BUFFER</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:BY"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:BY" class="name">BY</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the way by which the seek was performed.
+Must be one of :SAMPLE :FRAME :SECOND
+
+See SEEK-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:CHANNEL"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:CHANNEL" class="name">CHANNEL</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the channel that was attempted to be accessed.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:CHANNELS"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:CHANNELS" class="name">CHANNELS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the number of channels the decoded file has.
+
+This is NIL until the file is connected.
+
+See FILE
+See CONNECT
+See FILE-FORMAT</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:CONNECTED"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:CONNECTED" class="name">CONNECTED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether the file has been connected to the file or not.
+
+Before being connected most queries or actions against the file will
+fail.
+
+See FILE
+See CONNECT</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DATA"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DATA" class="name">DATA</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the actual picture data as an octet-vector.
+
+You are responsible for converting or interpreting the data as needed.
+
+See PICTURE.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DECODE-FRAMES"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DECODE-FRAMES" class="name">DECODE-FRAMES</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the number of frames that are decoded or T for all.
+
+This can be set via the :decode-frames initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DESCRIPTION"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DESCRIPTION" class="name">DESCRIPTION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the picture description string.
+
+See PICTURE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DOWN-SAMPLE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DOWN-SAMPLE" class="name">DOWN-SAMPLE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the downsampling approach being used.
+
+Can be one of NIL :NATIVE :HALF-RATE :QUARTER-RATE.
+
+This can be set via the :down-sample initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:DOWNSPEED"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:DOWNSPEED" class="name">DOWNSPEED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the number of times a frame will be played.
+
+This can be set via the :downspeed initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:ENCODING"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:ENCODING" class="name">ENCODING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the encoding the file is in.
+
+This is NIL until the file is connected.
+
+See FILE
+See CONNECT
+See FILE-FORMAT</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:ERROR-STRING"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:ERROR-STRING" class="name">ERROR-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FIELDS"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FIELDS" class="name">FIELDS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the list of fields stored in the metadata.
+Each entry in the list is of the following form:
+
+ENTRY       ::= (TYPE LANG DESCRIPTION TEXT)
+TYPE        --- A keyword corresponding to the id3v2 frame type name.
+LANG        --- A three-letter language string or NIL if no language was given.
+DESCRIPTION --- A string describing the field or NIL if no description was given.
+TEXT        --- The actual text content. Can also be an integer in cases where
+                the data type was known (year, track number).
+
+Note that fields that can potentially contain multiple values of the same type
+will be split into multiple instances of the same field. For example, a TPE1
+frame with text &quot;FOO/BAR&quot; gets split into two TPE1 entries, one with FOO as
+text and one with BAR.
+
+See METADATA
+See FIELD
+See FIELD-TEXT</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FILE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FILE" class="name">FILE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the file associated with the condition.
+
+See FILE
+See MPG-FILE-ERROR</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FORCE-8BIT"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FORCE-8BIT" class="name">FORCE-8BIT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether to force 8bit formats.
+
+This can be set via the :force-8bit initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FORCE-CHANNELS"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FORCE-CHANNELS" class="name">FORCE-CHANNELS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns, if at all, which channels are forced.
+
+Can be one of NIL :mono-right :mono-left :mono-mix :stereo.
+
+This can be set via the :force-channels initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FORCE-FLOAT"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FORCE-FLOAT" class="name">FORCE-FLOAT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether to force floating-point output.
+
+This can be set via the :force-float initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FORCE-RATE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FORCE-RATE" class="name">FORCE-RATE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns, if forced, the rate at which output is produced.
+
+This can be set via the :force-rate initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:FUZZY-SEEK"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:FUZZY-SEEK" class="name">FUZZY-SEEK</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether to allow approximate seeking by guessing.
+
+This can be set via the :fuzzy-seek initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:GAPLESS"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:GAPLESS" class="name">GAPLESS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether to use gapless decoding.
+
+This can be set via the :gapless initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:HANDLE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:HANDLE" class="name">HANDLE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the CL-MPG123-CFFI:HANDLE pointer of the file.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:IGNORE-INFOFRAME"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:IGNORE-INFOFRAME" class="name">IGNORE-INFOFRAME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether to ignore LAME/Xing info frames and treat them as normal MPEG data.
+
+This can be set via the :ignore-infoframe initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:IN-BUFFER"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:IN-BUFFER" class="name">IN-BUFFER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the pointer to the C char buffer used for input on decoding.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:IN-SIZE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:IN-SIZE" class="name">IN-SIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the size of the input buffer in bytes.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:INDEX-SIZE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:INDEX-SIZE" class="name">INDEX-SIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the frame index size.
+
+Can be NIL for default, T for dynamic growth, or an integer for
+specific size (positive) or growth rate (negative).
+
+This can be set via the :index-size initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:KIND"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:KIND" class="name">KIND</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the picture type.
+
+Can be one of:
+:OTHER :ICON :OTHER-ICON :FRONT-COVER :BACK-COVER :LEAFLET :MEDIA :LEAD
+:ARTIST :CONDUCTOR :ORCHESTRA :COMPOSER :LYRICIST :LOCATION :RECORDING
+:PERFORMANCE :VIDEO :FISH :ILLUSTRATION :ARTIST-LOGO :PUBLISHER-LOGO
+
+See PICTURE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:MIME-TYPE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:MIME-TYPE" class="name">MIME-TYPE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the picture data's mime-type as a string.
+
+See PICTURE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:MODE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:MODE" class="name">MODE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the mode by which the seek was performed.
+Must be one of :ABSOLUTE :RELATIVE :FROM-END
+
+See SEEK-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:OUT-BUFFER"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:OUT-BUFFER" class="name">OUT-BUFFER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the pointer to the C char buffer used for output on decoding.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:OUT-SIZE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:OUT-SIZE" class="name">OUT-SIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the size of the output buffer in bytes.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:OUTSCALE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:OUTSCALE" class="name">OUTSCALE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the output sample amplitude scale.
+
+This can be set via the :outscale initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:PARSE-PICTURES"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:PARSE-PICTURES" class="name">PARSE-PICTURES</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether ID3V2 APIC tags should be parsed.
+
+This can be set via the :parse-pictures initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:PATH"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:PATH" class="name">PATH</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the pathname of the file being accessed.
+
+See FILE
+See CONNECT</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:PICTURES"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:PICTURES" class="name">PICTURES</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the list of pictures stored in the metadata.
+
+See PICTURE
+See METADATA</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:PREFRAMES"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:PREFRAMES" class="name">PREFRAMES</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns how many frames to decode or ignore in advance for layer 3.
+
+This can be set via the :preframes initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:QUERY"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:QUERY" class="name">QUERY</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">The function that performed the query that failed.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:RATE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:RATE" class="name">RATE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the rate in Hertz that the decoded file is in.
+
+This is NIL until the file is connected.
+
+See FILE
+See CONNECT
+See FILE-FORMAT</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:RELATIVE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:RELATIVE" class="name">RELATIVE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether the volume was attempted to be adjusted relatively or absolutely.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:RVA"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:RVA" class="name">RVA</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the RVA mode being used.
+
+Can be one of NIL :OFF :MIX :ALBUM.
+
+This can be set via the :down-sample initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SCANNED"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SCANNED" class="name">SCANNED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether the file has been scanned for metadata.
+
+Before being scanned, some queries will return inaccurate results
+or might not be able to return any data at all, in which case they will
+initiate a scan themselves automatically.
+
+See FILE
+See SCAN</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SEEK-POSITION"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SEEK-POSITION" class="name">SEEK-POSITION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the position to which the seek was performed.
+
+See SEEK-FAILED</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:SKIP-ID3V2"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:SKIP-ID3V2" class="name">SKIP-ID3V2</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns whether to skip the ID3V2 tag information.
+
+This can be set via the :skip-id3v2 initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:START-FRAME"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:START-FRAME" class="name">START-FRAME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the index of the starting frame. Frames before this are not played.
+
+This can be set via the :start-frame initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:UPSPEED"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:UPSPEED" class="name">UPSPEED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the number of frames between two played frames.
+
+This can be set via the :upspeed initarg.
+
+See FILE</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:VALUE"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:VALUE" class="name">VALUE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(CONDITION)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">Returns the value the function tried to set before the condition was signalled.</pre>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123:VERSION"/>
+                  <article>
+                    <header class="generic">
+                      <span class="type">generic</span>
+                      <code>
+                        <h4><a href="#CL-MPG123:VERSION" class="name">VERSION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(OBJECT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring">The version of the ID3 metadata.
+Can be either &quot;1.0&quot; &quot;1.1&quot; &quot;2.3&quot; or &quot;2.4&quot;.
+
+See METADATA</pre>
+                  </article>
+                </li></ul>
+            </li><li class="package">
+              <h3>
+                <a name="CL-MPG123-CFFI" href="#CL-MPG123-CFFI">CL-MPG123-CFFI</a>
+                <span class="nicknames">(ORG.SHIRAKUMO.FRAF.MPG123.CFFI)</span>
+              </h3>
+              <ul><li>
+                  <a name="CL-MPG123-CFFI:ICY"/>
+                  <article>
+                    <header class="constant">
+                      <span class="type">constant</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ICY" class="name">ICY</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3"/>
+                  <article>
+                    <header class="constant">
+                      <span class="type">constant</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3" class="name">ID3</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:NEW-ICY"/>
+                  <article>
+                    <header class="constant">
+                      <span class="type">constant</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:NEW-ICY" class="name">NEW-ICY</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:NEW-ID3"/>
+                  <article>
+                    <header class="constant">
+                      <span class="type">constant</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:NEW-ID3" class="name">NEW-ID3</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:*STATIC*"/>
+                  <article>
+                    <header class="special">
+                      <span class="type">special</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:*STATIC*" class="name">*STATIC*</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FMT"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FMT" class="name">FMT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO" class="name">FRAMEINFO</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:HANDLE"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:HANDLE" class="name">HANDLE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V1"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V1" class="name">ID3V1</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2" class="name">ID3V2</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:MSTRING"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:MSTRING" class="name">MSTRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PARS"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PARS" class="name">PARS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PICTURE"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PICTURE" class="name">PICTURE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TEXT"/>
+                  <article>
+                    <header class="class">
+                      <span class="type">class</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TEXT" class="name">TEXT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FMT-CHANNELS"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FMT-CHANNELS" class="name">FMT-CHANNELS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FMT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FMT-ENCODING"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FMT-ENCODING" class="name">FMT-ENCODING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FMT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FMT-RATE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FMT-RATE" class="name">FMT-RATE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FMT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-ABR-RATE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-ABR-RATE" class="name">FRAMEINFO-ABR-RATE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-BITRATE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-BITRATE" class="name">FRAMEINFO-BITRATE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-EMPHASIS"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-EMPHASIS" class="name">FRAMEINFO-EMPHASIS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-FLAGS"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-FLAGS" class="name">FRAMEINFO-FLAGS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-FRAMESIZE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-FRAMESIZE" class="name">FRAMEINFO-FRAMESIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-LAYER"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-LAYER" class="name">FRAMEINFO-LAYER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-MODE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-MODE" class="name">FRAMEINFO-MODE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-MODE-EXT"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-MODE-EXT" class="name">FRAMEINFO-MODE-EXT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-RATE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-RATE" class="name">FRAMEINFO-RATE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-VBR"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-VBR" class="name">FRAMEINFO-VBR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEINFO-VERSION"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEINFO-VERSION" class="name">FRAMEINFO-VERSION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V1-ALBUM"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V1-ALBUM" class="name">ID3V1-ALBUM</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V1)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V1-ARTIST"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V1-ARTIST" class="name">ID3V1-ARTIST</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V1)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V1-COMMENT"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V1-COMMENT" class="name">ID3V1-COMMENT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V1)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V1-GENRE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V1-GENRE" class="name">ID3V1-GENRE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V1)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V1-TAG"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V1-TAG" class="name">ID3V1-TAG</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V1)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V1-TITLE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V1-TITLE" class="name">ID3V1-TITLE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V1)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V1-YEAR"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V1-YEAR" class="name">ID3V1-YEAR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V1)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-ALBUM"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-ALBUM" class="name">ID3V2-ALBUM</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-ARTIST"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-ARTIST" class="name">ID3V2-ARTIST</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-COMMENT"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-COMMENT" class="name">ID3V2-COMMENT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-COMMENT-LIST"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-COMMENT-LIST" class="name">ID3V2-COMMENT-LIST</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-COMMENTS"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-COMMENTS" class="name">ID3V2-COMMENTS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-EXTRA"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-EXTRA" class="name">ID3V2-EXTRA</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-EXTRAS"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-EXTRAS" class="name">ID3V2-EXTRAS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-GENRE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-GENRE" class="name">ID3V2-GENRE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-PICTURE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-PICTURE" class="name">ID3V2-PICTURE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-PICTURES"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-PICTURES" class="name">ID3V2-PICTURES</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-TEXT"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-TEXT" class="name">ID3V2-TEXT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-TEXTS"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-TEXTS" class="name">ID3V2-TEXTS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-TITLE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-TITLE" class="name">ID3V2-TITLE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-VERSION"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-VERSION" class="name">ID3V2-VERSION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3V2-YEAR"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3V2-YEAR" class="name">ID3V2-YEAR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-ID3V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:MSTRING-FILL"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:MSTRING-FILL" class="name">MSTRING-FILL</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-MSTRING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:MSTRING-P"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:MSTRING-P" class="name">MSTRING-P</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-MSTRING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:MSTRING-SIZE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:MSTRING-SIZE" class="name">MSTRING-SIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-MSTRING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PICTURE-DATA"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PICTURE-DATA" class="name">PICTURE-DATA</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-PICTURE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PICTURE-DESCRIPTION"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PICTURE-DESCRIPTION" class="name">PICTURE-DESCRIPTION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-PICTURE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PICTURE-MIME-TYPE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PICTURE-MIME-TYPE" class="name">PICTURE-MIME-TYPE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-PICTURE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PICTURE-SIZE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PICTURE-SIZE" class="name">PICTURE-SIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-PICTURE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PICTURE-TYPE"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PICTURE-TYPE" class="name">PICTURE-TYPE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-PICTURE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TEXT-DESCRIPTION"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TEXT-DESCRIPTION" class="name">TEXT-DESCRIPTION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-TEXT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TEXT-ID"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TEXT-ID" class="name">TEXT-ID</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-TEXT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TEXT-LANG"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TEXT-LANG" class="name">TEXT-LANG</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-TEXT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TEXT-TEXT"/>
+                  <article>
+                    <header class="accessor">
+                      <span class="type">accessor</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TEXT-TEXT" class="name">TEXT-TEXT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(POINTER-TO-TEXT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ADD-STRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ADD-STRING" class="name">ADD-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING STUFF)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ADD-SUBSTRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ADD-SUBSTRING" class="name">ADD-SUBSTRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING STUFF FROM COUNT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:CHOMP-STRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:CHOMP-STRING" class="name">CHOMP-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:CLIP"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:CLIP" class="name">CLIP</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:CLOSE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:CLOSE" class="name">CLOSE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:COPY-STRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:COPY-STRING" class="name">COPY-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(FROM TO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:CURRENT-DECODER"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:CURRENT-DECODER" class="name">CURRENT-DECODER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:DECODE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:DECODE" class="name">DECODE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE INMEMORY INMEMSIZE OUTMEMORY OUTMEMSIZE DONE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:DECODE-FRAME"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:DECODE-FRAME" class="name">DECODE-FRAME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE NUM AUDIO BYTES)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:DECODER"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:DECODER" class="name">DECODER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE NAME)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:DECODERS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:DECODERS" class="name">DECODERS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:DELETE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:DELETE" class="name">DELETE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:DELETE-PARS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:DELETE-PARS" class="name">DELETE-PARS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PARS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ENC-FROM-ID3"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ENC-FROM-ID3" class="name">ENC-FROM-ID3</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(ID3-ENC-BYTE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ENCODINGS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ENCODINGS" class="name">ENCODINGS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(LIST NUMBER)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ENCSIZE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ENCSIZE" class="name">ENCSIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(ENCODING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:EQ"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:EQ" class="name">EQ</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE CHANNEL BAND VAL)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ERRCODE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ERRCODE" class="name">ERRCODE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:EXIT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:EXIT" class="name">EXIT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FEATURE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FEATURE" class="name">FEATURE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(KEY)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FEED"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FEED" class="name">FEED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE IN SIZE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FEEDSEEK"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FEEDSEEK" class="name">FEEDSEEK</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE SAMPLEOFF WHENCE INPUT-OFFSET)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FMT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FMT" class="name">FMT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PARS RATE CHANNELS ENCODINGS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FMT-ALL"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FMT-ALL" class="name">FMT-ALL</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PARS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FMT-NONE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FMT-NONE" class="name">FMT-NONE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PARS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FMT-SUPPORT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FMT-SUPPORT" class="name">FMT-SUPPORT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PARS RATE ENCODING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FORMAT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FORMAT" class="name">FORMAT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE RATE CHANNELS ENCODINGS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FORMAT-ALL"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FORMAT-ALL" class="name">FORMAT-ALL</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FORMAT-NONE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FORMAT-NONE" class="name">FORMAT-NONE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FORMAT-SUPPORT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FORMAT-SUPPORT" class="name">FORMAT-SUPPORT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE RATE ENCODING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEBYFRAME-DECODE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEBYFRAME-DECODE" class="name">FRAMEBYFRAME-DECODE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE NUM AUDIO BYTES)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEBYFRAME-NEXT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEBYFRAME-NEXT" class="name">FRAMEBYFRAME-NEXT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEDATA"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEDATA" class="name">FRAMEDATA</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE HEADER BODYDATA BODYBYTES)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMELENGTH"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMELENGTH" class="name">FRAMELENGTH</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FRAMEPOS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FRAMEPOS" class="name">FRAMEPOS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:FREE-STRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:FREE-STRING" class="name">FREE-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:GETEQ"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:GETEQ" class="name">GETEQ</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE CHANNEL BAND)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:GETFORMAT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:GETFORMAT" class="name">GETFORMAT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE RATE CHANNELS ENCODING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:GETPAR"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:GETPAR" class="name">GETPAR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PARS TYPE VALUE FVALUE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:GETPARAM"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:GETPARAM" class="name">GETPARAM</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE TYPE VALUE FVALUE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:GETSTATE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:GETSTATE" class="name">GETSTATE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE KEY VAL FVAL)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:GETVOLUME"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:GETVOLUME" class="name">GETVOLUME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE BASE REALLY RVA-DB)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:GROW-STRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:GROW-STRING" class="name">GROW-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING NEWS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ICY"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ICY" class="name">ICY</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE ICY-META)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ICY2UTF8"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ICY2UTF8" class="name">ICY2UTF8</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(ICY_TEXT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:ID3"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:ID3" class="name">ID3</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE V1 V2)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:INDEX"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:INDEX" class="name">INDEX</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE OFFSETS STEP FILL)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:INFO"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:INFO" class="name">INFO</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE FRAMEINFO)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:INIT"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:INIT" class="name">INIT</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:INIT-STRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:INIT-STRING" class="name">INIT-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:LENGTH"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:LENGTH" class="name">LENGTH</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:META-CHECK"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:META-CHECK" class="name">META-CHECK</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:META-FREE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:META-FREE" class="name">META-FREE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:NEW"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:NEW" class="name">NEW</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(DECODER ERROR)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:NEW-PARS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:NEW-PARS" class="name">NEW-PARS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(ERROR)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:OPEN"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:OPEN" class="name">OPEN</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE PATH)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:OPEN-FD"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:OPEN-FD" class="name">OPEN-FD</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE FD)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:OPEN-FEED"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:OPEN-FEED" class="name">OPEN-FEED</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:OPEN-HANDLE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:OPEN-HANDLE" class="name">OPEN-HANDLE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE IOHANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:OUTBLOCK"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:OUTBLOCK" class="name">OUTBLOCK</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PAR"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PAR" class="name">PAR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PARS TYPE VALUE FVALUE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PARAM"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PARAM" class="name">PARAM</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE TYPE VALUE FVALUE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PARNEW"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PARNEW" class="name">PARNEW</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(PARS DECODER ERROR)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:PLAIN-STRERROR"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:PLAIN-STRERROR" class="name">PLAIN-STRERROR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(ERRCODE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:POSITION"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:POSITION" class="name">POSITION</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE FRAME-OFFSET BUFFERED-BYTES CURRENT-FRAME FRAMES-LEFT CURRENT-SECONDS
+ SECONDS-LEFT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:RATES"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:RATES" class="name">RATES</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(LIST NUMBER)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:READ"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:READ" class="name">READ</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE OUTMEMORY OUTMEMSIZE DONE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:REPLACE-BUFFER"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:REPLACE-BUFFER" class="name">REPLACE-BUFFER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE DATA SIZE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:REPLACE-READER"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:REPLACE-READER" class="name">REPLACE-READER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE R_READ R_LSEEK)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:REPLACE-READER-HANDLE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:REPLACE-READER-HANDLE" class="name">REPLACE-READER-HANDLE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE R_READ R_LSEEK CLEANUP)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:RESET-EQ"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:RESET-EQ" class="name">RESET-EQ</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:RESIZE-STRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:RESIZE-STRING" class="name">RESIZE-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING NEWS)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SAFE-BUFFER"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SAFE-BUFFER" class="name">SAFE-BUFFER</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SAMPLESIZE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SAMPLESIZE" class="name">SAMPLESIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(ENC)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SCAN"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SCAN" class="name">SCAN</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SEEK"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SEEK" class="name">SEEK</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE SAMPLEOFF WHENCE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SEEK-FRAME"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SEEK-FRAME" class="name">SEEK-FRAME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE FRAMEOFF WHENCE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SET-FILESIZE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SET-FILESIZE" class="name">SET-FILESIZE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE SIZE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SET-INDEX"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SET-INDEX" class="name">SET-INDEX</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE OFFSETS STEP FILL)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SET-STRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SET-STRING" class="name">SET-STRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING STUFF)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SET-SUBSTRING"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SET-SUBSTRING" class="name">SET-SUBSTRING</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING STUFF FROM COUNT)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SPF"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SPF" class="name">SPF</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:STORE-UTF8"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:STORE-UTF8" class="name">STORE-UTF8</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING ENC SOURCE SOURCE-SIZE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:STRERROR"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:STRERROR" class="name">STRERROR</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:STRLEN"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:STRLEN" class="name">STRLEN</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(MSTRING UTF8)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:SUPPORTED-DECODERS"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:SUPPORTED-DECODERS" class="name">SUPPORTED-DECODERS</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">()</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TELL"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TELL" class="name">TELL</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TELL-STREAM"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TELL-STREAM" class="name">TELL-STREAM</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TELLFRAME"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TELLFRAME" class="name">TELLFRAME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TIMEFRAME"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TIMEFRAME" class="name">TIMEFRAME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE SEC)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:TPF"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:TPF" class="name">TPF</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:VOLUME"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:VOLUME" class="name">VOLUME</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE VOL)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li><li>
+                  <a name="CL-MPG123-CFFI:VOLUME-CHANGE"/>
+                  <article>
+                    <header class="function">
+                      <span class="type">function</span>
+                      <code>
+                        <h4><a href="#CL-MPG123-CFFI:VOLUME-CHANGE" class="name">VOLUME-CHANGE</a></h4>
+                        <span class="qualifiers"></span>
+                        <span class="arguments">(HANDLE CHANGE)</span>
+                      </code>
+                    </header>
+                    <pre class="docstring"/>
+                  </article>
+                </li></ul>
+            </li></ul>
+        </article>
+      
+    </div>
+  </body>
+</html>

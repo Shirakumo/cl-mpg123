@@ -231,11 +231,6 @@
             collect (list (foreign-enum-keyword 'cl-mpg123-cffi:enc enc)
                           (cl-mpg123-cffi:encsize enc))))))
 
-(defun file-format (file)
-  (check-connected file)
-  (with-foreign-values ((rate :long) (channels :int) (encoding 'cl-mpg123-cffi:enc))
-    (with-generic-error (cl-mpg123-cffi:getformat (handle file) rate channels encoding))))
-
 (defun read-directly (file buffer-pointer buffer-size)
   (with-foreign-object (done 'size_t)
     (with-generic-error (cl-mpg123-cffi:read (handle file) buffer-pointer buffer-size done))
@@ -296,6 +291,7 @@
       (with-generic-error (cl-mpg123-cffi:volume (handle file) volume))))
 
 (defun info (file)
+  (check-connected file)
   (with-foreign-object (info :pointer)
     (with-generic-error (cl-mpg123-cffi:info (handle file) info))
     (list :version (cl-mpg123-cffi:frameinfo-version info)
@@ -308,6 +304,11 @@
           :bitrate (cl-mpg123-cffi:frameinfo-bitrate info)
           :abr-rate (cl-mpg123-cffi:frameinfo-abr-rate info)
           :vbr (cl-mpg123-cffi:frameinfo-vbr info))))
+
+(defun file-format (file)
+  (check-connected file)
+  (with-foreign-values ((rate :long) (channels :int) (encoding 'cl-mpg123-cffi:enc))
+    (with-generic-error (cl-mpg123-cffi:getformat (handle file) rate channels encoding))))
 
 (defun scan (file)
   (unless (scanned file)

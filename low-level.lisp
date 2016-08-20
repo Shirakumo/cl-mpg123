@@ -109,7 +109,7 @@
   (:force-stereo        #x00008)
   (:force-8bit          #x00010)
   (:quiet               #x00020)
-  (:fapless             #x00040)
+  (:gapless             #x00040)
   (:no-resync           #x00080)
   (:seekbuffer          #x00100)
   (:fuzzy               #x00200)

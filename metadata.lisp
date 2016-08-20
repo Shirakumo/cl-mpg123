@@ -39,7 +39,7 @@
         (add-field "TIT2" (direct-str (cl-mpg123-cffi:id3v1-title id3v1) 30))
         (add-field "TPE1" (direct-str (cl-mpg123-cffi:id3v1-artist id3v1) 30))
         (add-field "TALB" (direct-str (cl-mpg123-cffi:id3v1-album id3v1) 30))
-        (add-field "TDRC" (parse-integer (direct-str (cl-mpg123-cffi:id3v1-year id3v1) 4)))
+        (add-field "TRCK" (parse-integer (direct-str (cl-mpg123-cffi:id3v1-year id3v1) 4)))
         (add-field "TCON" (id3v1-genre (cl-mpg123-cffi:id3v1-genre id3v1)))
         (let ((cptr (cl-mpg123-cffi:id3v1-comment id3v1))
               (comment NIL))

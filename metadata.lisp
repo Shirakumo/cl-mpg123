@@ -50,10 +50,10 @@
   (with-slots (version fields comments extras pictures) data
     (flet ((add-field (type text &optional desc)
              (when (and text (not (equal text "")))
-               (push (list (intern type :keyword) desc text) fields)))
+               (pushnew (list (intern type :keyword) desc text) fields :test #'equal)))
            (add-comment (text &optional lang desc)
              (when (and text (not (equal text "")))
-               (push (list lang desc text) comments))))
+               (pushnew (list lang desc text) comments :test #'equal))))
       (when id3v1
         (setf version "1.0")
         (add-field "TIT2" (direct-str (cl-mpg123-cffi:id3v1-title id3v1) 30))
@@ -90,7 +90,7 @@
             ((cl-mpg123-cffi:id3v2-extra id3v2)
              (cl-mpg123-cffi:id3v2-extras id3v2))
           (declare (ignore lang id))
-          (push (list desc text) extras))
+          (pushnew (list desc text) extras :test #'equal))
         (dotimes (i (cl-mpg123-cffi:id3v2-pictures id3v2))
           (push (make-instance 'picture :struct (mem-aptr (cl-mpg123-cffi:id3v2-picture id3v2) '(:struct cl-mpg123-cffi:picture) i))
                 pictures))))))

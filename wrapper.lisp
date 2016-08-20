@@ -153,6 +153,7 @@
                           (cl-mpg123-cffi:encsize enc))))))
 
 (defun file-format (file)
+  (check-connected file)
   (with-foreign-values ((rate :long) (channels :int) (encoding 'cl-mpg123-cffi:enc))
     (with-generic-error (cl-mpg123-cffi:getformat (handle file) rate channels encoding))))
 

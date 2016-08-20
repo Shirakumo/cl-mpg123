@@ -215,32 +215,6 @@
   (setf (slot-value file 'decoder) decoder)
   decoder)
 
-(defun decoders ()
-  (loop for ptr = (cl-mpg123-cffi:decoders) then (inc-pointer ptr (foreign-type-size :pointer))
-        for string = (mem-ref ptr :string)
-        while string collect string))
-
-(defun supported-decoders ()
-  (loop for ptr = (cl-mpg123-cffi:supported-decoders) then (inc-pointer ptr (foreign-type-size :pointer))
-        for string = (mem-ref ptr :string)
-        while string collect string))
-
-(defun supported-rates ()
-  (with-value-args ((list :pointer) (number 'size_t))
-      (cl-mpg123-cffi:rates list number)
-    (when (and list number)
-      (loop for i from 0 below number
-            collect (mem-aref list :long i)))))
-
-(defun supported-encodings ()
-  (with-value-args ((list :pointer) (number 'size_t))
-      (cl-mpg123-cffi:encodings list number)
-    (when (and list number)
-      (loop for i from 0 below number
-            for enc = (mem-aref list :int i)
-            collect (list (foreign-enum-keyword 'cl-mpg123-cffi:enc enc)
-                          (cl-mpg123-cffi:encsize enc))))))
-
 (defun read-directly (file buffer-pointer buffer-size)
   (with-foreign-object (done 'size_t)
     (with-error (err 'read-failed :file file :error err :buffer buffer-pointer :buffer-size buffer-size)
@@ -411,3 +385,29 @@ Encoding:     ~a"
         (T
          (format stream "~%
 Not connected. Cannot retrieve further information."))))
+
+(defun decoders ()
+  (loop for ptr = (cl-mpg123-cffi:decoders) then (inc-pointer ptr (foreign-type-size :pointer))
+        for string = (mem-ref ptr :string)
+        while string collect string))
+
+(defun supported-decoders ()
+  (loop for ptr = (cl-mpg123-cffi:supported-decoders) then (inc-pointer ptr (foreign-type-size :pointer))
+        for string = (mem-ref ptr :string)
+        while string collect string))
+
+(defun supported-rates ()
+  (with-value-args ((list :pointer) (number 'size_t))
+      (cl-mpg123-cffi:rates list number)
+    (when (and list number)
+      (loop for i from 0 below number
+            collect (mem-aref list :long i)))))
+
+(defun supported-encodings ()
+  (with-value-args ((list :pointer) (number 'size_t))
+      (cl-mpg123-cffi:encodings list number)
+    (when (and list number)
+      (loop for i from 0 below number
+            for enc = (mem-aref list :int i)
+            collect (list (foreign-enum-keyword 'cl-mpg123-cffi:enc enc)
+                          (cl-mpg123-cffi:encsize enc))))))

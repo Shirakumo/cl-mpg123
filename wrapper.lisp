@@ -261,12 +261,12 @@
     (foreign-pointer
      (cffi:foreign-string-to-lisp
       (cl-mpg123-cffi:mstring-p mstring)
-      :count (cl-mpg123-cffi:mstring-fill mstring)
+      :max-chars (cl-mpg123-cffi:mstring-size mstring)
       :encoding :UTF-8))
     (list
      (cffi:foreign-string-to-lisp
       (getf mstring 'cl-mpg123-cffi::p)
-      :count (getf mstring 'cl-mpg123-cffi::fill)
+      :max-chars (getf mstring 'cl-mpg123-cffi::size)
       :encoding :UTF-8))))
 
 (defmacro do-text-array ((lang id description text) (array size) &body body)

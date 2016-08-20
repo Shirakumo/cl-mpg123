@@ -190,6 +190,66 @@
   (:nicknames #:org.shirakumo.fraf.mpg123)
   (:use #:cl #:cffi)
   (:import-from #:org.shirakumo.fraf.mpg123.cffi #:size_t #:off_t)
+  ;; id3-data
+  (:export
+   #:id3v1-genre
+   #:id3v2-genre
+   #:id3v2-type)
+  ;; metadata.lisp
+  (:export
+   #:metadata
+   #:version
+   #:fields
+   #:pictures
+   #:field
+   #:field-text
+   #:picture
+   #:kind
+   #:description
+   #:mime-type
+   #:data)
+  ;; toolkit.lisp
+  (:export)
   ;; wrapper.lisp
   (:export
-   ))
+   #:init
+   #:exit
+   #:file
+   #:handle
+   #:connected
+   #:scanned
+   #:buffer
+   #:rate
+   #:channels
+   #:encoding
+   #:path
+   #:decoder
+   #:accepted-format
+   #:buffer-size
+   #:connect
+   #:disconnect
+   #:decoders
+   #:supported-decoders
+   #:supported-rates
+   #:supported-encodings
+   #:file-format
+   #:read-directly
+   #:process
+   #:decode
+   #:decode-frame
+   #:sample-position
+   #:frame-position
+   #:stream-position
+   #:seek
+   #:time-frame-index
+   #:equalizer
+   #:reset-equalizer
+   #:volume
+   #:info
+   #:scan
+   #:frame-count
+   #:sample-count
+   #:frame-seconds
+   #:frame-samples
+   #:track-length
+   #:metadata))

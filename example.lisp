@@ -1,6 +1,6 @@
 (defpackage #:cl-mpg123-example
   (:use #:cl #:cffi)
-  (:export #:main)
+  (:export #:main-low-level #:main-high-level)
   (:local-nicknames (:m :cl-mpg123-cffi)
                     (:o :cl-out123-cffi)))
 (in-package #:cl-mpg123-example)
@@ -78,7 +78,7 @@
             (cffi:mem-ref encoding :int)
             (cffi:mem-ref framesize :int))))
 
-(defun main (file &key driver output encoding buffer-size)
+(defun main-lwo-level (file &key driver output encoding buffer-size)
   (let ((driver (or driver (null-pointer)))
         (output (or output (null-pointer))))
     (with-mpeg-init
@@ -105,7 +105,24 @@
                        (let* ((read (cffi:mem-ref read 'm:size_t))
                               (played (o:play out-handle buffer read)))
                          (when (/= played read)
-                           (v:warn "Playback is not catching up with input by ~a bytes."
+                           (v:warn :mpg123 "Playback is not catching up with input by ~a bytes."
                                    (- read played)))
                          (when (<= read 0)
                            (return)))))))))))
+
+(defun main-high-level (file &key driver output (buffer-size T))
+  (let* ((file (make-instance 'cl-mpg123:file :path file :buffer-size buffer-size))
+         (out (make-instance 'cl-out123:output :driver driver :device output)))
+    (cl-mpg123:connect file)
+    (cl-out123:connect out)
+    (multiple-value-bind (rate channels encoding) (cl-mpg123:file-format file)
+      (v:info :mpg123 "Input format ~a Hz, ~a channels, ~a encoded." rate channels encoding)
+      (cl-out123:start out :rate rate :channels channels :encoding encoding))
+    (v:info :mpg123 "Playback device ~a / ~a" (cl-out123:driver out) (cl-out123:device out))
+    (loop with buffer = (cl-mpg123:buffer file)
+          for read = (cl-mpg123:process file)
+          for played = (cl-out123:play out buffer read)
+          while (< 0 read)
+          do (when (/= played read)
+               (v:warn :mpg123 "Playback is not catching up with input by ~a bytes."
+                       (- read played))))))

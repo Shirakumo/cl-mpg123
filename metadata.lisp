@@ -102,6 +102,9 @@
           when (eql name type)
           collect (list desc text))))
 
+(defun field-text (name metadata)
+  (values-list (mapcar #'second (field name metadata))))
+
 (defclass picture ()
   ((kind :reader kind)
    (description :reader description)

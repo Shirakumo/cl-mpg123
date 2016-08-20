@@ -122,6 +122,7 @@
    #:close
    #:read
    #:feed
+   #:decode-directly
    #:decode
    #:decode-frame
    #:framebyframe-decode

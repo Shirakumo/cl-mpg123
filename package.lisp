@@ -320,5 +320,6 @@
    #:sample-count
    #:frame-seconds
    #:frame-samples
+   #:track-position
    #:track-length
    #:metadata))

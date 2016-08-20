@@ -359,6 +359,10 @@
   (* (frame-seconds file)
      (frame-count file)))
 
+(defun track-position (file)
+  (* (frame-seconds file)
+     (frame-position file)))
+
 (defun metadata (file &optional (id3v1-encoding :utf-8))
   (scan file)
   (multiple-value-bind (id3v1 id3v2)

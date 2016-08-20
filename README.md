@@ -53,3 +53,7 @@ Once you know you are done with the file, you can `disconnect` it to release the
     (cl-mpg123:disconnect *file*)
 
 And that's about it. See the individual functions for more information on what exactly you can get or change. If you want to look at a full example that actually plays something, see the `cl-mpg123-example` system, which shows how to use it in combination with `cl-out123` using either the low-level binding interface, or the high-level wrapper interface shown here.
+
+## Also See
+
+* [cl-out123](https://shirakumo.github.org/cl-out123/) For simple audio output.

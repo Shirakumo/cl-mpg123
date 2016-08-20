@@ -9,51 +9,31 @@
 (defclass metadata ()
   ((version :initform NIL :reader version)
    (fields :initform NIL :reader fields)
-   (comments :initform NIL :reader comments)
-   (extras :initform NIL :reader extras)
    (pictures :initform NIL :reader pictures)))
 
-(defun mstring (mstring)
-  (etypecase mstring
-    (foreign-pointer
-     (cffi:foreign-string-to-lisp
-      (cl-mpg123-cffi:mstring-p mstring)
-      :max-chars (cl-mpg123-cffi:mstring-size mstring)
-      :encoding :UTF-8))
-    (list
-     (cffi:foreign-string-to-lisp
-      (getf mstring 'cl-mpg123-cffi::p)
-      :max-chars (getf mstring 'cl-mpg123-cffi::size)
-      :encoding :UTF-8))))
+(defun map-text-array (func array size)
+  (dotimes (i size)
+    (let* ((p (mem-aptr array '(:struct cl-mpg123-cffi:text) i))
+           (id   (direct-str (cl-mpg123-cffi:text-id p) 4))
+           (lang (direct-str (cl-mpg123-cffi:text-lang p) 3))
+           (description (mstring (cl-mpg123-cffi:text-description p)))
+           (text (mstring (cl-mpg123-cffi:text-text p))))
+      (funcall func lang id description text))))
 
 (defmacro do-text-array ((lang id description text) (array size) &body body)
   `(map-text-array (lambda (,lang ,id ,description ,text)
                      ,@body)
                    ,array ,size))
 
-(defun direct-str (pointer length)
-  (let ((str (or (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding :utf-8))
-                 (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding :iso-8859-1)))))
-    (if (or (not str) (string= "" str)) NIL str)))
-
-(defun map-text-array (func array size)
-  (dotimes (i size)
-    (let* ((p (mem-aptr array '(:struct cl-mpg123-cffi:text) i))
-           (lang (direct-str (cl-mpg123-cffi:text-lang p) 3))
-           (id   (direct-str (cl-mpg123-cffi:text-id p) 4))
-           (description (mstring (cl-mpg123-cffi:text-description p)))
-           (text (mstring (cl-mpg123-cffi:text-text p))))
-      (funcall func lang id description text))))
-
 (defmethod initialize-instance :after ((data metadata) &key id3v2 id3v1)
   ;; Fill by id3v1, then override by id3v2.
-  (with-slots (version fields comments extras pictures) data
-    (flet ((add-field (type text &optional desc)
-             (when (and text (not (equal text "")))
-               (pushnew (list (intern type :keyword) desc text) fields :test #'equal)))
-           (add-comment (text &optional lang desc)
-             (when (and text (not (equal text "")))
-               (pushnew (list lang desc text) comments :test #'equal))))
+  (with-slots (version fields pictures) data
+    (labels ((add-field (type text &optional lang desc)
+               (etypecase text
+                 (null)
+                 (list (dolist (tex text) (add-field type tex lang desc)))
+                 (T (pushnew (list (intern type :keyword) lang desc text)
+                             fields :test #'equal)))))
       (when id3v1
         (setf version "1.0")
         (add-field "TIT2" (direct-str (cl-mpg123-cffi:id3v1-title id3v1) 30))
@@ -70,27 +50,24 @@
                  (add-field "TRCK" (mem-ref cptr :char 29)))
                 (T
                  (setf comment (direct-str cptr 30))))
-          (add-comment comment)))
+          (add-field "COMM" comment)))
       (when id3v2
         (setf version (format NIL "2.~a" (cl-mpg123-cffi:id3v2-version id3v2)))
         (do-text-array (lang id desc text)
             ((cl-mpg123-cffi:id3v2-text id3v2)
              (cl-mpg123-cffi:id3v2-texts id3v2))
-          (declare (ignore lang))
-          ;; Genre gets special processing as it might contain multiple fields in one.
-          (cond ((string= id "TCON") (dolist (genre (id3v2-genre text))
-                                       (add-field "TCON" genre)))
-                (T (add-field id text desc))))
+          (cond ((find id '("TCOM" "TEXT" "TOLY" "TOPE" "TPE1") :test #'string=) (add-field id (split text #\/) lang desc))
+                ((find id '("TORY" "TYER") :test #'string=) (add-field id (parse-integer text) lang desc))
+                ((string= id "TCON") (add-field id (id3v2-genre text) lang desc))
+                (T (add-field id text lang desc))))
         (do-text-array (lang id desc text)
             ((cl-mpg123-cffi:id3v2-comment-list id3v2)
              (cl-mpg123-cffi:id3v2-comments id3v2))
-          (declare (ignore id))
-          (add-comment text lang desc))
+          (add-field id text lang desc))
         (do-text-array (lang id desc text)
             ((cl-mpg123-cffi:id3v2-extra id3v2)
              (cl-mpg123-cffi:id3v2-extras id3v2))
-          (declare (ignore lang id))
-          (pushnew (list desc text) extras :test #'equal))
+          (add-field id text lang desc))
         (dotimes (i (cl-mpg123-cffi:id3v2-pictures id3v2))
           (push (make-instance 'picture :struct (mem-aptr (cl-mpg123-cffi:id3v2-picture id3v2) '(:struct cl-mpg123-cffi:picture) i))
                 pictures))))))
@@ -98,12 +75,12 @@
 (defun field (name metadata)
   (let ((name (or (id3v2-type name)
                    (error "Unknown id3v2 frame type ~s." name))))
-    (loop for (type desc text) in (fields metadata)
+    (loop for (type lang desc text) in (fields metadata)
           when (eql name type)
-          collect (list desc text))))
+          collect (list lang desc text))))
 
 (defun field-text (name metadata)
-  (values-list (mapcar #'second (field name metadata))))
+  (values-list (mapcar #'third (field name metadata))))
 
 (defclass picture ()
   ((kind :reader kind)

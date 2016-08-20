@@ -41,3 +41,36 @@
     `(let ((,res (progn ,@form)))
        (when (= ,res 0) (error "Failed to execute ~s." ',form))
        ,res)))
+
+(defun string-nil (string)
+  (when (and string (string/= "" string))
+    string))
+
+(defun direct-str (pointer length)
+  (string-nil (or (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding :utf-8))
+                  (ignore-errors (foreign-string-to-lisp pointer :max-chars length :encoding :iso-8859-1)))))
+
+(defun mstring (mstring)
+  (string-nil
+   (etypecase mstring
+     (foreign-pointer
+      (cffi:foreign-string-to-lisp
+       (cl-mpg123-cffi:mstring-p mstring)
+       :max-chars (cl-mpg123-cffi:mstring-size mstring)
+       :encoding :UTF-8))
+     (list
+      (cffi:foreign-string-to-lisp
+       (getf mstring 'cl-mpg123-cffi::p)
+       :max-chars (getf mstring 'cl-mpg123-cffi::size)
+       :encoding :UTF-8)))))
+
+(defun split (string char)
+  (let ((parts ()))
+    (loop with buf = (make-string-output-stream)
+          for c across string
+          do (if (char= c char)
+                 (let ((part (get-output-stream-string buf)))
+                   (when (string-nil part) (push part parts)))
+                 (write-char c buf))
+          finally (push (get-output-stream-string buf) parts))
+    (nreverse parts)))

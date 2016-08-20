@@ -70,8 +70,10 @@
   (encoding :int))
 
 ;;; mpg123.h
-(defctype size_t :unsigned-int)
-(defctype off_t :int)
+(defctype size_t #+x86-64 :unsigned-long
+                 #-x86-64 :unsigned-int)
+(defctype off_t  #+x86-64 :long
+                 #-x86-64 :int)
 
 (defconstant ID3     #x03)
 (defconstant NEW-ID3 #x01)

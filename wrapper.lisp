@@ -343,3 +343,41 @@
         (with-generic-error (cl-mpg123-cffi:id3 (handle file) id3v1 id3v2)))
     (make-instance 'metadata :id3v1 (if (null-pointer-p id3v1) NIL id3v1)
                              :id3v2 (if (null-pointer-p id3v2) NIL id3v2))))
+
+(defmethod describe-object ((file file) stream)
+  (format stream "~
+~a
+  [~a]
+
+Path:         ~a"
+          file (type-of file) (path file))
+  (cond ((connected file)
+         (destructuring-bind (&key version layer bitrate &allow-other-keys) (info file)
+           (multiple-value-bind (rate channels encoding) (file-format file)
+             (format stream "~%
+  File Format Information:
+MPEG Version: ~a
+MPEG Layer:   ~a
+Bitrate:      ~a kbps
+Rate:         ~a Hz
+Channels:     ~a
+Encoding:     ~a"
+                     version layer bitrate rate channels encoding)))
+         (let ((metadata (metadata file)))
+           (format stream "~%
+  Some Metadata:
+~@[Title:        ~a~]
+~@[Artist:       ~{~a~^, ~}~]
+~@[Album:        ~a~]
+~@[Track Nr:     ~a~]
+~@[Album Artist: ~a~]
+~@[Genre:        ~{~a~^, ~}~]"
+                   (field-text :title metadata)
+                   (multiple-value-list (field-text :artist metadata))
+                   (field-text :album metadata)
+                   (field-text :track metadata)
+                   (field-text :album-artist metadata)
+                   (multiple-value-list (field-text :genre metadata)))))
+        (T
+         (format stream "~%
+Not connected. Cannot retrieve further information."))))

@@ -46,6 +46,9 @@
    (connected :initform NIL :reader connected :writer set-connected)
    (scanned :initform NIL :reader scanned :writer set-scanned)
    (buffer :initform NIL :reader buffer)
+   (rate :initform NIL :reader rate)
+   (channels :initform NIL :reader channels)
+   (encoding :initform NIL :reader encoding)
    (path :initarg :path :reader path)
    (decoder :initarg :decoder :reader decoder)
    (accepted-format :initarg :accepted-format :reader accepted-format)
@@ -106,6 +109,10 @@
          (pathname (uiop:native-namestring path)))))
   (set-connected T file)
   (setf (slot-value file 'path) path)
+  (multiple-value-bind (rate channels encoding) (file-format file)
+    (setf (slot-value file 'rate) rate)
+    (setf (slot-value file 'channels) channels)
+    (setf (slot-value file 'encoding) encoding))
   file)
 
 (defun disconnect (file)
@@ -144,6 +151,10 @@
             for enc = (mem-aref list :int i)
             collect (list (foreign-enum-keyword 'cl-mpg123-cffi:enc enc)
                           (cl-mpg123-cffi:encsize enc))))))
+
+(defun file-format (file)
+  (with-foreign-values ((rate :long) (channels :int) (encoding 'cl-mpg123-cffi:enc))
+    (with-generic-error (cl-mpg123-cffi:getformat (handle file) rate channels encoding))))
 
 (defun read-directly (file buffer-pointer buffer-size)
   (with-foreign-object (done 'size_t)

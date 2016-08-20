@@ -6,6 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.mpg123)
 
+(defparameter *print-object-path-limit* 30)
 (defvar *init* NIL)
 
 (defun init ()
@@ -99,8 +100,11 @@
 
 (defmethod print-object ((file file) stream)
   (print-unreadable-object (file stream :type T)
-    (format stream "~@[~s~]~:[~; :CONNECTED~]"
-            (path file) (connected file))))
+    (let* ((path (uiop:native-namestring (path file)))
+           (pathstr (if (<= (length path) (+ 2 *print-object-path-limit*)) path
+                        (format NIL "..~a" (subseq path (- (length path) *print-object-path-limit*))))))
+      (format stream "~@[~s~]~:[~; :CONNECTED~]"
+              pathstr (connected file)))))
 
 (defmethod shared-initialize :after ((file file) slots &key)
   (init)

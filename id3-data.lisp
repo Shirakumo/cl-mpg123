@@ -6,7 +6,7 @@
 
 (in-package #:org.shirakumo.fraf.mpg123)
 
-(defvar *id3v1-genre-list*
+(defparameter *id3v1-genre-list*
   (list ;; ID3V1 Spec
         "Blues"
         "Classic Rock"
@@ -234,7 +234,7 @@
      end
        (return-from id3v2-genre genres))))
 
-(defvar *id3v2-type-map*
+(defparameter *id3v2-type-map*
   '((:aenc :encryption :audio-encryption)
     (:apic :picture)
     (:comm :comment)
@@ -283,12 +283,12 @@
     (:tory :original-year :original-release-year)
     (:town :licensee :owner :file-licensee :file-owner)
     (:tpe1 :artist :lead-performer :soloist)
-    (:tpe2 :band :orchestra :accompaniment)
+    (:tpe2 :album-artist :band :orchestra :accompaniment)
     (:tpe3 :conductor :performer-refinement)
     (:tpe4 :interpreter :remixer)
     (:tpos :part :part-of-set)
     (:tpub :publisher)
-    (:trck :track :position-in-set)
+    (:trck :track :track-number :position-in-set)
     (:trda :recording-date)
     (:trsn :radio-name :internet-radio-station-name)
     (:trso :radio-owner :internet-radio-stsation-owner)

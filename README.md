@@ -56,4 +56,4 @@ And that's about it. See the individual functions for more information on what e
 
 ## Also See
 
-* [cl-out123](https://shirakumo.github.org/cl-out123/) For simple audio output.
+* [cl-out123](https://shirakumo.github.io/cl-out123/) For simple audio output.

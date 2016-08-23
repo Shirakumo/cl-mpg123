@@ -15,7 +15,7 @@
 (defmacro define-direct-condition (name superclasses format-string &rest args)
   `(define-simple-condition ,name ,superclasses
      ,(loop for arg in args
-            when (and (listp arg) (eql 'c (second arg)))
+            when (and (listp arg) (eql 'c (second arg)) (not (eql (first arg) 'error-string)))
             collect `(,(first arg) :initarg ,(intern (string (first arg)) :keyword)
                                    :initform NIL
                                    :reader ,(first arg)))

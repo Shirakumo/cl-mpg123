@@ -89,7 +89,7 @@
    :upspeed NIL
    :start-frame NIL
    :decode-frames T
-   :outscale 1
+   :outscale T
    :index-size NIL
    :preframes 4
    :force-channels NIL
@@ -161,8 +161,11 @@
     (etypecase decode-frames
       ((or (eql T) (eql NIL)))
       (integer (with-generic-error (cl-mpg123-cffi:param handle :decode-frames decode-frames 0.0d0))))
-    (with-generic-error
-      (cl-mpg123-cffi:param handle :outscale (round outscale) (float outscale 0.0d0)))
+    (etypecase outscale
+      ((eql NIL))
+      ((eql T) (with-generic-error (cl-mpg123-cffi:param handle :outscale 0 1.0d0)))
+      ((integer) (with-generic-error (cl-mpg123-cffi:param handle :outscale outscale 0.0d0)))
+      ((float) (with-generic-error (cl-mpg123-cffi:param handle :outscale 0 outscale))))
     (etypecase index-size
       ((eql NIL))
       ((eql T) (with-generic-error (cl-mpg123-cffi:param handle :index-size -1 0.0d0)))

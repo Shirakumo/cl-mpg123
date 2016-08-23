@@ -22,14 +22,14 @@
 
 (defun encode-encodings (encodings)
   (etypecase encodings
-    (integer encodings)
+    ((or symbol integer) encodings)
     (list (let ((encoding 0))
             (dolist (enc encodings encoding)
               (setf encoding (logior encoding (foreign-enum-value 'cl-mpg123-cffi:enc enc))))))))
 
 (defun encode-channels (channels)
   (etypecase channels
-    (integer channels)
+    ((or symbol integer) channels)
     (list (let ((channel 0))
             (dolist (chan channels channel)
               (setf channel (logior channel (foreign-enum-value 'cl-mpg123-cffi:channelcount chan))))))))

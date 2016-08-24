@@ -78,7 +78,7 @@
             (cffi:mem-ref encoding :int)
             (cffi:mem-ref framesize :int))))
 
-(defun main-lwo-level (file &key driver output encoding buffer-size)
+(defun main-low-level (file &key driver output encoding buffer-size)
   (let ((driver (or driver (null-pointer)))
         (output (or output (null-pointer))))
     (with-mpeg-init

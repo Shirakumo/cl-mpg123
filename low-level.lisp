@@ -36,8 +36,8 @@
   (:uint16      #x0060)                 ; 16 | 0x20
   (:uint8       #x0001)
   (:int8        #x0082)                 ; signed | 0x02
-  (:ulaw-8      #x0004)
-  (:alaw-8      #x0008)
+  (:ulaw8       #x0004)
+  (:alaw8       #x0008)
   (:int32       #x1180)                 ; 32 | signed | 0x1000
   (:uint32      #x2100)                 ; 32 | 0x2000
   (:int24       #x5080)                 ; 24 | signed | 0x1000

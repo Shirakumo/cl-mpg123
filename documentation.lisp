@@ -614,12 +614,13 @@ This can be NIL for none, T for all, or a list of three values:
  (RATE CHANNELS ENCODINGS) where RATE is the accepted rate in Hertz,
 CHANNELS is one of :left :right :left-right, and ENCODINGS is a list of
 allowed data encodings, each value being one of:
-:signed-8 :unsigned-8 :signed-16 :unsigned-16 :signed-24 :unsigned-24
-:signed-32 :unsigned-32 :ulaw-8 :alaw-8 :float-32 :float-64
+:int8  :uint8  :int16  :uint16 :int24 :uint24
+:int32 :uint32 :ulaw-8 :alaw-8 :float :double
 
 This can be set via the :accepted-format initarg.
 
-See FILE")
+See FILE
+See CL-MPG123-CFFI:ENC")
 
   (function buffer-size
     "Returns the size of the internal buffer used to store decoded data.

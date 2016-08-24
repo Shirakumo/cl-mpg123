@@ -190,6 +190,9 @@
       (with-generic-error (cl-mpg123-cffi:param handle :add-flags flags 0.0d0)))))
 
 (defmethod reinitialize-instance :around ((file file) &key)
+  ;; Make sure the finalizers can't accidentally try to double-free.
+  (tg:cancel-finalization file)
+  (foreign-free (buffer file))
   (dispose-handle (handle file))
   (call-next-method)
   (set-scanned NIL file)

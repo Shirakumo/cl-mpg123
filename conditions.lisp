@@ -28,7 +28,10 @@
   "Unknown id3v2 frame type ~s." (name c))
 
 (define-condition error-string-error (mpg-error)
-  ((error :initarg :error :initform NIL :reader error-string)))
+  ((error :initarg :error :initform NIL :reader error-code)))
+
+(defmethod error-string ((error error-string-error))
+  (cl-mpg123-cffi:plain-strerror (error-code error)))
 
 (define-direct-condition generic-error (error-string-error)
   "Failed to execute ~s~@[: ~a~]" (form c) (error-string c))

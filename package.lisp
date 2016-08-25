@@ -197,6 +197,7 @@
    #:unknown-id3v2-frame-type
    #:error-string-error
    #:error-string
+   #:error-code
    #:generic-error
    #:init-failed
    #:mpg-file-error

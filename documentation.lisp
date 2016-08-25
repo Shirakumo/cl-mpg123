@@ -48,7 +48,19 @@ See UNKNOWN-ID3v2-FRAME-TYPE")
     "Condition superclass for all errors that include an error string from the underlying library.
 
 See MPG-ERROR
+See ERROR-CODE
 See ERROR-STRING")
+
+  (function error-code
+    "Returns the CL-MPG123-CFFI:ERRORS error-code associated with the condition.
+
+See ERROR-STRING-ERROR
+See ERROR-STRING")
+
+  (function error-string
+    "Returns the string describing the error code associated with the condition.
+
+See ERROR-STRING-ERROR")
 
   (type generic-error
     "A generic error class to be used in situations where no more specific class applies.

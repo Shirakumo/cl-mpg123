@@ -20,10 +20,7 @@
 (defmacro with-error ((err datum &rest datum-args) &body form)
   `(let ((,err (progn ,@form)))
      (unless (eql ,err :ok)
-       (let ((,err (if (eql ,err :err)
-                       "Unknown error."
-                       (cl-mpg123-cffi:plain-strerror ,err))))
-         (error ,datum ,@datum-args)))))
+       (error ,datum ,@datum-args))))
 
 (defmacro with-generic-error (&body form)
   (let ((err (gensym "ERR")))

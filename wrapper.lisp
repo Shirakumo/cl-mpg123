@@ -235,7 +235,8 @@
 
 (defun read-directly (file buffer-pointer buffer-size)
   (with-foreign-object (done 'size_t)
-    (with-error (err 'read-failed :file file :error err :buffer buffer-pointer :buffer-size buffer-size)
+    (with-error (err 'read-failed :file file :error err :buffer buffer-pointer :buffer-size buffer-size
+                                  :ok '(:ok :done))
       (cl-mpg123-cffi:read (handle file) buffer-pointer buffer-size done))
     (mem-ref done 'size_t)))
 

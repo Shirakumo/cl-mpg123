@@ -17,10 +17,12 @@
        (with-foreign-values ,bindings ,call)
      ,@body))
 
-(defmacro with-error ((err datum &rest datum-args) &body form)
-  `(let ((,err (progn ,@form)))
-     (unless (eql ,err :ok)
-       (error ,datum ,@datum-args))))
+(defmacro with-error ((err datum &rest datum-args &key (ok '(:ok)) &allow-other-keys) &body form)
+  (let ((args (copy-list datum-args)))
+    (remf args :ok)
+    `(let ((,err (progn ,@form)))
+       (unless (find ,err ,ok)
+         (error ,datum ,@args)))))
 
 (defmacro with-generic-error (&body form)
   (let ((err (gensym "ERR")))

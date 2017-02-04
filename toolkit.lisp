@@ -17,7 +17,7 @@
        (with-foreign-values ,bindings ,call)
      ,@body))
 
-(defmacro with-error ((err datum &rest datum-args &key (ok '(:ok)) &allow-other-keys) &body form)
+(defmacro with-error ((err datum &rest datum-args &key (ok ''(:ok)) &allow-other-keys) &body form)
   (let ((args (copy-list datum-args)))
     (remf args :ok)
     `(let ((,err (progn ,@form)))

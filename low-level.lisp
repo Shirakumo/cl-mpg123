@@ -251,7 +251,7 @@
   (:utf8     3)
   (:max      3))
 
-(defcenum id3-pic-type
+(defcenum (id3-pic-type :char)
   (:other           0)
   (:icon            1)
   (:other-icon      2)

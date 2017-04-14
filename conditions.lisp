@@ -31,7 +31,9 @@
   ((error :initarg :error :initform NIL :reader error-code)))
 
 (defmethod error-string ((error error-string-error))
-  (cl-mpg123-cffi:plain-strerror (error-code error)))
+  (if (error-code error)
+      (cl-mpg123-cffi:plain-strerror (error-code error))
+      "(unknown error code)"))
 
 (define-direct-condition generic-error (error-string-error)
   "Failed to execute ~s~@[: ~a~]" (form c) (error-string c))

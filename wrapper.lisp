@@ -131,7 +131,7 @@
           ((eql NIL))
           (integer))
         (when buffer-size
-          (let ((buffer (foreign-alloc :char :count buffer-size)))
+          (let ((buffer (foreign-alloc :char :count (buffer-size file))))
             (setf (slot-value file 'buffer) buffer)
             (tg:finalize file (lambda () (foreign-free buffer)))))
         (configure-properties file)))))

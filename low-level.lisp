@@ -233,6 +233,11 @@
   :frankenstein
   :fresh-decoder)
 
+(defcenum seek
+  (:set 0)
+  (:cur 1)
+  (:end 0))
+
 (defcenum text-encoding
   (:unknown  0)
   (:utf8     1)
@@ -488,18 +493,18 @@
 (defcfun (seek "mpg123_seek") off_t
   (handle :pointer)
   (sampleoff off_t)
-  (whence :int))
+  (whence seek))
 
 (defcfun (feedseek "mpg123_feedseek") off_t
   (handle :pointer)
   (sampleoff off_t)
-  (whence :int)
+  (whence seek)
   (input-offset (:pointer off_t)))
 
 (defcfun (seek-frame "mpg123_seek_frame") off_t
   (handle :pointer)
   (frameoff off_t)
-  (whence :int))
+  (whence seek))
 
 (defcfun (timeframe "mpg123_timeframe") off_t
   (handle :pointer)

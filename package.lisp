@@ -90,6 +90,7 @@
    #:mode
    #:flags
    #:state
+   #:seek
    #:text-encoding
    #:id3-enc
    #:id3-pic-type

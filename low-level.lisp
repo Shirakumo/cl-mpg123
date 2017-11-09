@@ -369,7 +369,7 @@
 (defcfun (plain-strerror "mpg123_plain_strerror") :string
   (errcode errors))
 
-(defcfun (strerror "mpg123_sterror") :string
+(defcfun (strerror "mpg123_strerror") :string
   (handle :pointer))
 
 (defcfun (errcode "mpg123_errcode") :int

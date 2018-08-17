@@ -11,7 +11,9 @@
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :description "The ported mpg123-to-out123 example."
-  :homepage "https://github.com/Shirakumo/cl-mpg123"
+  :homepage "https://Shirakumo.github.io/cl-mpg123/"
+  :bug-tracker "https://github.com/Shirakumo/cl-mpg123/issues"
+  :source-control (:git "https://github.com/Shirakumo/cl-mpg123.git")
   :serial T
   :components ((:file "example"))
   :depends-on (:cl-mpg123

@@ -11,7 +11,9 @@
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :description "Bindings to libmpg123, providing cross-platform, fast MPG1/2/3 decoding."
-  :homepage "https://github.com/Shirakumo/cl-mpg123"
+  :homepage "https://Shirakumo.github.io/cl-mpg123/"
+  :bug-tracker "https://github.com/Shirakumo/cl-mpg123/issues"
+  :source-control (:git "https://github.com/Shirakumo/cl-mpg123.git")
   :serial T
   :components ((:file "package")
                (:file "toolkit")

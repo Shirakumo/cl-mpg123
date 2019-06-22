@@ -7,7 +7,7 @@
 
 (asdf:defsystem cl-mpg123-example
   :version "1.0.0"
-  :license "Artistic"
+  :license "zlib"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :description "The ported mpg123-to-out123 example."

@@ -7,7 +7,7 @@
 
 (asdf:defsystem cl-mpg123
   :version "1.0.0"
-  :license "Artistic"
+  :license "zlib"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :description "Bindings to libmpg123, providing cross-platform, fast MPG1/2/3 decoding."

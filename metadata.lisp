@@ -58,14 +58,15 @@
         (do-text-array (lang id desc text)
             ((cl-mpg123-cffi:id3v2-text id3v2)
              (cl-mpg123-cffi:id3v2-texts id3v2))
-          (cond ((find id '("TCOM" "TEXT" "TOLY" "TOPE" "TPE1") :test #'string=) (add-field id (split text #\/) lang desc))
-                ((find id '("TORY" "TYER") :test #'string=) (add-field id (parse-integer text) lang desc))
-                ((string= id "TRCK") (add-field id (parse-integer
-                                                    (let ((slashpos (position #\/ text)))
-                                                      (if slashpos (subseq text 0 slashpos) text)))
-                                                lang desc))
-                ((string= id "TCON") (add-field id (id3v2-genre text) lang desc))
-                (T (add-field id text lang desc))))
+          (when text
+            (cond ((find id '("TCOM" "TEXT" "TOLY" "TOPE" "TPE1") :test #'string=) (add-field id (split text #\/) lang desc))
+                  ((find id '("TORY" "TYER") :test #'string=) (add-field id (parse-integer text) lang desc))
+                  ((string= id "TRCK") (add-field id (parse-integer
+                                                      (let ((slashpos (position #\/ text)))
+                                                        (if slashpos (subseq text 0 slashpos) text)))
+                                                  lang desc))
+                  ((string= id "TCON") (add-field id (id3v2-genre text) lang desc))
+                  (T (add-field id text lang desc)))))
         (do-text-array (lang id desc text)
             ((cl-mpg123-cffi:id3v2-comment-list id3v2)
              (cl-mpg123-cffi:id3v2-comments id3v2))

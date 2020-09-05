@@ -22,7 +22,7 @@
     (remf args :ok)
     `(let ((,err (progn ,@form)))
        (unless (find ,err ,ok)
-         (error ,datum ,@args)))))
+         (cerror "Ignore the error." ,datum ,@args)))))
 
 (defmacro with-generic-error (&body form)
   (let ((err (gensym "ERR")))

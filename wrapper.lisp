@@ -295,9 +295,9 @@
         (:sample (cl-mpg123-cffi:seek (handle file) position whence))
         (:frame (cl-mpg123-cffi:seek-frame (handle file) position whence))
         (:second (case mode
-                   (:absolute (seek file (time-frame-index file position) :by :frame))
-                   (:relative (seek file (time-frame-index file (+ (track-position file) position)) :by :frame))
-                   (:from-end (seek file (time-frame-index file (- (track-length file) position)) :by :frame)))
+                   (:absolute (seek file (* (samplerate file) position) :by :sample))
+                   (:relative (seek file (* (samplerate file) (+ (track-position file) position)) :by :sample))
+                   (:from-end (seek file (* (samplerate file) (- (track-length file) position)) :by :sample)))
          (track-position file))))))
 
 (defun time-frame-index (file seconds)

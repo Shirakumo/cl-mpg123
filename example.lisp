@@ -2,7 +2,8 @@
   (:use #:cl #:cffi)
   (:export #:main-low-level #:main-high-level)
   (:local-nicknames (:m :cl-mpg123-cffi)
-                    (:o :cl-out123-cffi)))
+                    (:o :cl-out123-cffi)
+                    (:v :org.shirakumo.verbose)))
 (in-package #:cl-mpg123-example)
 
 (defmacro with-err-return (form)

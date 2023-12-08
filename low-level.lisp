@@ -7,7 +7,8 @@
 (define-foreign-library libmpg123
   (:darwin (:or "libmpg123.dylib" "libmpg123.so"
                 #+X86 "mac32-libmpg123.dylib"
-                #+X86-64 "mac64-libmpg123.dylib"))
+                #+X86-64 "mac64-libmpg123.dylib"
+                #+ARM64 "arm64-libmpg123.dylib"))
   (:unix (:or "libmpg123.so"
               #+X86 "lin32-libmpg123.so"
               #+X86-64 "lin64-libmpg123.so"))

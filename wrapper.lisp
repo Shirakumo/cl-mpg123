@@ -98,7 +98,7 @@
 
 (defmethod print-object ((file file) stream)
   (print-unreadable-object (file stream :type T)
-    (let* ((path (uiop:native-namestring (path file)))
+    (let* ((path (pathname-utils:native-namestring (path file)))
            (pathstr (if (<= (length path) (+ 2 *print-object-path-limit*)) path
                         (format NIL "..~a" (subseq path (- (length path) *print-object-path-limit*))))))
       (format stream "~@[~s~]~:[~; :CONNECTED~]"
@@ -205,7 +205,7 @@
      (handle file)
      (etypecase path
        (string path)
-       (pathname (uiop:native-namestring path)))))
+       (pathname (pathname-utils:native-namestring path)))))
   (set-connected T file)
   (setf (slot-value file 'path) path)
   (multiple-value-bind (rate channels encoding) (file-format file)

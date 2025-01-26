@@ -17,6 +17,7 @@
                (:file "wrapper")
                (:file "documentation"))
   :depends-on (:cffi
+               :pathname-utils
                :trivial-features
                :trivial-garbage
                :documentation-utils))

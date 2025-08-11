@@ -4,9 +4,9 @@
   :author "Yukari Hafner <shinmera@tymoon.eu>"
   :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :description "Bindings to libmpg123, providing cross-platform, fast MPG1/2/3 decoding."
-  :homepage "https://Shirakumo.github.io/cl-mpg123/"
-  :bug-tracker "https://github.com/Shirakumo/cl-mpg123/issues"
-  :source-control (:git "https://github.com/Shirakumo/cl-mpg123.git")
+  :homepage "https://shirakumo.org/docs/cl-mpg123/"
+  :bug-tracker "https://shirakumo.org/project/cl-mpg123/issues"
+  :source-control (:git "https://shirakumo.org/project/cl-mpg123.git")
   :serial T
   :components ((:file "package")
                (:file "toolkit")
